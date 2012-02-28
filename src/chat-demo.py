@@ -2,9 +2,9 @@
 
 # tar cvjf chat-demo.tar.bz2 chat-demo --exclude ".svn" --exclude "*pyc" --exclude "*~" --exclude ".backup"
 
-import android
 import communication
 import time
+import sys
 
 from community.community import ChatCommunity
 
@@ -12,7 +12,12 @@ from dispersy.callback import Callback
 from dispersy.dispersy import Dispersy
 from dispersy.member import Member
 from dispersy.dprint import dprint
-from dispersy.crypto import ec_generate_key, ec_to_public_bin, ec_to_private_bin
+from dispersy.crypto import (ec_generate_key,
+        ec_to_public_bin, ec_to_private_bin)
+
+
+from ui.main import Ui_MainWindow
+from PySide import QtGui
 
 # generated: Sun Feb 26 16:54:45 2012
 # curve: high <<< NID_sect571r1 >>>
@@ -35,46 +40,107 @@ from dispersy.crypto import ec_generate_key, ec_to_public_bin, ec_to_private_bin
 # xciyg4t4ufJbRF38wd7Gi0I8Qfer2BBKSB/4bF5jixPtW9lQWbdDy7wlybKwbice
 # Tw==
 # -----END EC PRIVATE KEY-----
-master_public_key = "3081a7301006072a8648ce3d020106052b81040027038192000400686f2843cd96ff5f3ff399af8e4a97af3ca716d4e84855285b9cdf054a11b5ec3e4076f75ab2c36d2d508dd7cbc1180378a39c35998b6fb4c80b384cdcadd643471df7da6d4a41008a33f0a5b29009fffeca8b20b65d1313b6759ee20149c5c8b2838b78b9f25b445dfcc1dec68b423c41f7abd8104a481ff86c5e638b13ed5bd95059b743cbbc25c9b2b06e271e4f".decode("HEX")
+master_public_key = "3081a7301006072a8648ce3d020106052b810400270381920004006\
+86f2843cd96ff5f3ff399af8e4a97af3ca716d4e84855285b9cdf054a11b5ec3e4076f75ab2c\
+36d2d508dd7cbc1180378a39c35998b6fb4c80b384cdcadd643471df7da6d4a41008a33f0a5b\
+29009fffeca8b20b65d1313b6759ee20149c5c8b2838b78b9f25b445dfcc1dec68b423c41f7a\
+bd8104a481ff86c5e638b13ed5bd95059b743cbbc25c9b2b06e271e4f".decode("HEX")
 if True:
     # when crypto.py is disabled a public key is slightly
     # different...
-    master_public_key = ";".join(("60", master_public_key[:60].encode("HEX"), ""))
+    master_public_key = ";".join(("60", master_public_key[:60].encode("HEX"),
+                                                                         ""))
 
-def demo(callback):
-    dispersy = Dispersy.get_instance()
-    master = Member.get_instance(master_public_key)
-    
-    try:
-        community = ChatCommunity.load_community(master)
-    except ValueError:
-        ec = ec_generate_key(u"low")
-        my_member = Member.get_instance(ec_to_public_bin(ec), ec_to_private_bin(ec), sync_with_database=True)
-        community = ChatCommunity.join_community(master, my_member)
 
-def dispersy(callback):
-    # start Dispersy
-    dispersy = Dispersy.get_instance(callback, u".")
-    dispersy.socket = communication.get_socket(callback, dispersy)
-    return dispersy
+class ChatCore:
+    def demo(self, callback):
+        dispersy = Dispersy.get_instance()
+        master = Member.get_instance(master_public_key)
 
-def main():
-    # start threads
-    callback = Callback()
-    callback.start(name="Dispersy")
+        try:
+            community = ChatCommunity.load_community(master)
+        except ValueError:
+            ec = ec_generate_key(u"low")
+            my_member = Member.get_instance(ec_to_public_bin(ec),
+                                            ec_to_private_bin(ec),
+                                            sync_with_database=True)
+            community = ChatCommunity.join_community(master, my_member)
 
-    callback.register(dispersy, (callback,))
-    callback.register(demo, (callback,))
+        community.textMessageReceived.connect(self.onTextMessageReceived)
+        self.community = community
 
-    while not callback.is_finished:
-        time.sleep(1.0)
+    def dispersy(self, callback):
+        # start Dispersy
+        dispersy = Dispersy.get_instance(callback, u".")
+        dispersy.socket = communication.get_socket(callback, dispersy)
+        return dispersy
 
-    if callback.exception:
-        global exit_exception
-        exit_exception = callback.exception
+    def onTextMessageReceived(self, text):
+        self.mainwin.message_list.addItem(text)
+        print text
+
+    def onNickChanged(self, *argv, **kwargs):
+        nick = self.mainwin.nick_line.text()
+        print "Nick changed to:", nick
+        self.callback.register(self.community.setNick, (nick,))
+
+    def onMessageReadyToSend(self):
+        message = self.mainwin.message_line.text()
+        print "Sending message: ", message
+        self.callback.register(self.community.sendMessage, (message,))
+        self.mainwin.message_line.clear()
+
+    def _setupThreads(self):
+        # start threads
+        callback = Callback()
+        callback.start(name="Dispersy")
+
+        callback.register(self.dispersy, (callback,))
+        callback.register(self.demo, (callback,))
+        self.callback = callback
+
+    def _stopThreads():
+        self.callback.stop()
+
+        if self.callback.exception:
+            global exit_exception
+            exit_exception = self.callback.exception
+
+    def run(self):
+
+        #while not callback.is_finished:
+        #    print "X", app.processEvents()
+        #    time.sleep(0.01)
+
+        #Setup QT main window
+        self.app = QtGui.QApplication(sys.argv)
+        self.mainwin = MainWin()
+        self.mainwin.show()
+        #ui.nick_line.returnPressed.connect(on_nick_changed)
+        self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
+        self.mainwin.message_line.returnPressed.connect(
+                                                self.onMessageReadyToSend)
+
+        #Setup dispersy threads
+        self._setupThreads()
+
+        #Start QT's event loop
+        self.app.exec_()
+
+        #Destroy dispersy threads
+        self._stopThreads()
+
+
+class MainWin(QtGui.QMainWindow, Ui_MainWindow):
+    def __init__(self, *argv, **kwargs):
+        super(MainWin, self).__init__(*argv, **kwargs)
+        #super(Ui_MainWindow, self).__init__(*argv, **kwargs)
+        self.setupUi(self)
+
 
 if __name__ == "__main__":
     exit_exception = None
-    main()
+    chat = ChatCore()
+    chat.run()
     if exit_exception:
         raise exit_exception
