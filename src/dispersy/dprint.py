@@ -754,7 +754,7 @@ def dprint(*args, **kargs):
     elif kargs["pprint"]:
         messages.extend(pformat(args, width=kargs["width"]).split("\n"))
     else:
-        messages.append(kargs["glue"].join([str(v) for v in args]))
+        messages.append(kargs["glue"].join([unicode(v) for v in args]))
 
     # add a line of characters at the top to seperate messages
     if kargs["line"]:
