@@ -84,7 +84,7 @@ class ChatCore:
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
         print "Nick changed to:", nick
-        if nick and nick == self.nick:
+        if nick and nick != self.nick:
             self.callback.register(self.community.setNick, (nick,))
             self.nick = nick
         else:
