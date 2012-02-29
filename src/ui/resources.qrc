@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="main">
+    <file>face-smile-big.png</file>
+    <file>configure.png</file>
+  </qresource>
+</RCC>
