@@ -16,7 +16,7 @@ from dispersy.crypto import (ec_generate_key,
         ec_to_public_bin, ec_to_private_bin)
 
 
-from ui.main import Ui_MainWindow
+from ui.main import Ui_TheGlobalSquare
 #from PySide import QtGui, QtCore
 from PyQt4 import QtGui, QtCore
 
@@ -143,7 +143,7 @@ class ChatCore:
         self._stopThreads()
 
 
-class MainWin(QtGui.QMainWindow, Ui_MainWindow):
+class MainWin(QtGui.QMainWindow, Ui_TheGlobalSquare):
     def __init__(self, *argv, **kwargs):
         super(MainWin, self).__init__(*argv, **kwargs)
         #super(Ui_MainWindow, self).__init__(*argv, **kwargs)
