@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+# -*- conding: utf8 -*-
 # tar cvjf chat-demo.tar.bz2 chat-demo --exclude ".svn" --exclude "*pyc" --exclude "*~" --exclude ".backup"
 
 import communication
@@ -94,7 +94,7 @@ class ChatCore:
             print "Same or empty nick, doing nothing"
 
     def onMessageReadyToSend(self):
-        message = self.mainwin.message_line.text()
+        message = unicode(self.mainwin.message_line.text())
         if message:
             print "Sending message: ", message
             self.callback.register(self.community.sendMessage, (message,))
