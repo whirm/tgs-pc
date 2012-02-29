@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>TheGlobalSquare</class>
+ <widget class="QMainWindow" name="TheGlobalSquare">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -39,7 +39,7 @@
        <bool>false</bool>
       </property>
       <property name="dragDropMode">
-       <enum>QAbstractItemView::NoDragDrop</enum>
+       <enum>QAbstractItemView::DragOnly</enum>
       </property>
       <property name="selectionMode">
        <enum>QAbstractItemView::NoSelection</enum>

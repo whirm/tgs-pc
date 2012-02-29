@@ -11,7 +11,10 @@ from dispersy.distribution import FullSyncDistribution
 from dispersy.message import BatchConfiguration, Message, DelayMessageByProof
 from dispersy.resolution import PublicResolution
 
-from PySide.QtCore import Signal, QObject
+#Looks like pyside is crashing more than what's confortable, let's try with ol' pyqt
+#from PySide.QtCore import Signal, QObject
+from PyQt4.QtCore import pyqtSignal, QObject
+Signal = pyqtSignal
 
 #Python:
 from time import time
@@ -78,6 +81,4 @@ class ChatCommunity(Community,QObject):
         for message in messages:
             if __debug__: dprint(message.payload.text, force=1)
             print "Message:", message.payload.text
-            print "DIIIIIR"
-            print dir(self.textMessageReceived)
             self.textMessageReceived.emit(message.payload.text)

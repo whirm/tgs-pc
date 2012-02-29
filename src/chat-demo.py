@@ -17,7 +17,8 @@ from dispersy.crypto import (ec_generate_key,
 
 
 from ui.main import Ui_MainWindow
-from PySide import QtGui
+#from PySide import QtGui, QtCore
+from PyQt4 import QtGui, QtCore
 
 # generated: Sun Feb 26 16:54:45 2012
 # curve: high <<< NID_sect571r1 >>>
@@ -69,6 +70,8 @@ class ChatCore:
                                             sync_with_database=True)
             community = ChatCommunity.join_community(master, my_member)
 
+        #pyside:
+        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
         community.textMessageReceived.connect(self.onTextMessageReceived)
         self.community = community
 
