@@ -4,4 +4,4 @@
 *.bak
 /src/ui/main.py
 /src/ui/resources_rc.py
-
+/src/sqlite
