@@ -17,6 +17,51 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QListWidget" name="message_list">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="autoScroll">
+       <bool>true</bool>
+      </property>
+      <property name="autoScrollMargin">
+       <number>2</number>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="showDropIndicator" stdset="0">
+       <bool>false</bool>
+      </property>
+      <property name="dragDropMode">
+       <enum>QAbstractItemView::NoDragDrop</enum>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::NoSelection</enum>
+      </property>
+      <property name="verticalScrollMode">
+       <enum>QAbstractItemView::ScrollPerPixel</enum>
+      </property>
+      <property name="horizontalScrollMode">
+       <enum>QAbstractItemView::ScrollPerPixel</enum>
+      </property>
+      <property name="movement">
+       <enum>QListView::Snap</enum>
+      </property>
+      <property name="isWrapping" stdset="0">
+       <bool>false</bool>
+      </property>
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
       <item>
        <property name="text">
         <string>Welcome to TGS Chat Demo!</string>
@@ -41,6 +86,12 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="text">
+         <string>Anon</string>
+        </property>
+        <property name="maxLength">
+         <number>20</number>
+        </property>
        </widget>
       </item>
       <item>
@@ -51,7 +102,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="message_line"/>
+       <widget class="QLineEdit" name="message_line">
+        <property name="maxLength">
+         <number>200</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>

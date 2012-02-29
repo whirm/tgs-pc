@@ -53,6 +53,9 @@ if True:
 
 
 class ChatCore:
+    def __init__(self):
+        self.nick = "Anon"
+
     def demo(self, callback):
         dispersy = Dispersy.get_instance()
         master = Member.get_instance(master_public_key)
@@ -77,18 +80,24 @@ class ChatCore:
 
     def onTextMessageReceived(self, text):
         self.mainwin.message_list.addItem(text)
-        print text
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
         print "Nick changed to:", nick
-        self.callback.register(self.community.setNick, (nick,))
+        if nick and nick == self.nick:
+            self.callback.register(self.community.setNick, (nick,))
+            self.nick = nick
+        else:
+            print "Same or empty nick, doing nothing"
 
     def onMessageReadyToSend(self):
         message = self.mainwin.message_line.text()
-        print "Sending message: ", message
-        self.callback.register(self.community.sendMessage, (message,))
-        self.mainwin.message_line.clear()
+        if message:
+            print "Sending message: ", message
+            self.callback.register(self.community.sendMessage, (message,))
+            self.mainwin.message_line.clear()
+        else:
+            print "Not sending empty message."
 
     def _setupThreads(self):
         # start threads
@@ -136,6 +145,10 @@ class MainWin(QtGui.QMainWindow, Ui_MainWindow):
         super(MainWin, self).__init__(*argv, **kwargs)
         #super(Ui_MainWindow, self).__init__(*argv, **kwargs)
         self.setupUi(self)
+
+        #We want the message list to scroll to the bottom every time we send or receive a new message.
+        message_model = self.message_list.model()
+        message_model.rowsInserted.connect(self.message_list.scrollToBottom)
 
 
 if __name__ == "__main__":
