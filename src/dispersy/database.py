@@ -28,7 +28,7 @@ class Database(Singleton):
         """
         if __debug__:
             assert isinstance(file_path, unicode)
-            dprint(file_path, force=True)
+            dprint(file_path)
             self._debug_thread_ident = thread.get_ident()
         self._file_path = file_path
 
