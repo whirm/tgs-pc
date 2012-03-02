@@ -382,12 +382,6 @@ class Callback(object):
         else:
             return container[0]
 
-    def loop_forever(self):
-        with self._lock:
-            self._stats = "STATE_PLEASE_RUN"
-
-        self._loop()
-        
     def start(self, name="Generic-Callback", wait=True):
         """
         Start the asynchronous thread.
@@ -624,16 +618,16 @@ class Callback(object):
             if __debug__: dprint("STATE_FINISHED")
             self._state = "STATE_FINISHED"
 
-        # if __debug__:
-        #     dprint("top ten calls, sorted by cumulative time", line=True, force=True)
-        #     key = lambda (_, (cumulative_time, __)): cumulative_time
-        #     for call_name, (cumulative_time, call_count) in islice(sorted(self._debug_statistics.iteritems(), key=key, reverse=True), 10):
-        #         dprint("%8.2fs %6dx" % (cumulative_time, call_count), "  - ", call_name, force=True)
+        if __debug__:
+            dprint("top ten calls, sorted by cumulative time", line=True, force=True)
+            key = lambda (_, (cumulative_time, __)): cumulative_time
+            for call_name, (cumulative_time, call_count) in islice(sorted(self._debug_statistics.iteritems(), key=key, reverse=True), 10):
+                dprint("%8.2fs %6dx" % (cumulative_time, call_count), "  - ", call_name, force=True)
 
-        #     dprint("top ten calls, sorted by execution count", line=True, force=True)
-        #     key = lambda (_, (__, call_count)): call_count
-        #     for call_name, (cumulative_time, call_count) in islice(sorted(self._debug_statistics.iteritems(), key=key, reverse=True), 10):
-        #         dprint("%8.2fs %6dx" % (cumulative_time, call_count), "  - ", call_name, force=True)
+            dprint("top ten calls, sorted by execution count", line=True, force=True)
+            key = lambda (_, (__, call_count)): call_count
+            for call_name, (cumulative_time, call_count) in islice(sorted(self._debug_statistics.iteritems(), key=key, reverse=True), 10):
+                dprint("%8.2fs %6dx" % (cumulative_time, call_count), "  - ", call_name, force=True)
 
 if __debug__:
     def main():

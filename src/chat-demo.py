@@ -59,15 +59,13 @@ class ChatCore:
 
     def demo(self, callback):
         dispersy = Dispersy.get_instance()
-        master = Member.get_instance(master_public_key)
+        master = Member(master_public_key)
 
         try:
             community = ChatCommunity.load_community(master)
         except ValueError:
             ec = ec_generate_key(u"low")
-            my_member = Member.get_instance(ec_to_public_bin(ec),
-                                            ec_to_private_bin(ec),
-                                            sync_with_database=True)
+            my_member = Member(ec_to_public_bin(ec), ec_to_private_bin(ec))
             community = ChatCommunity.join_community(master, my_member)
 
         #pyside:
