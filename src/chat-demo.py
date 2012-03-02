@@ -17,10 +17,10 @@ from dispersy.crypto import (ec_generate_key,
 
 try:
     from ui.main import Ui_TheGlobalSquare
+    from ui.square import Ui_SquareDialog
 except (ImportError):
     print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
     sys.exit()
-    
 
 #from PySide import QtGui, QtCore
 from PyQt4 import QtGui, QtCore
@@ -156,6 +156,28 @@ class MainWin(QtGui.QMainWindow, Ui_TheGlobalSquare):
         message_model = self.message_list.model()
         message_model.rowsInserted.connect(self.message_list.scrollToBottom)
 
+        #Debug/demo stuff we will remove as functionality is implemented:
+        self.showSquare_btn.clicked.connect(self.onDemoShowSquare)
+
+    def onDemoShowSquare(self):
+        #Keep a reference to it so it doesn't get destroyed
+        self.square_dialog = SquareDialog()
+        self.square_dialog.show()
+
+
+class SquareDialog(QtGui.QDialog, Ui_SquareDialog):
+    def __init__(self, *argv, **kwargs):
+        super(SquareDialog, self).__init__(*argv, **kwargs)
+        self.setupUi(self)
+
+        #Connect the joinSquare button to its callback
+        self.joinSquare_btn.clicked.connect(self.onJoinSquareClicked)
+
+    def onJoinSquareClicked(self):
+        msgBox = QtGui.QMessageBox()
+        msgBox.setText("You wish!")
+        self.close()
+        msgBox.exec_()
 
 if __name__ == "__main__":
     exit_exception = None
