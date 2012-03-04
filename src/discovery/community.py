@@ -97,7 +97,7 @@ class DiscoveryCommunity(Community):
                     hot.square = PreviewCommunity.join_community(master, self._my_member, self)
 
             if index < 10:
-                if not hot.message and hot.last_requested < now - 10.0:
+                if not hot.message and hot.last_requested < now - 10.0 and hot.sources:
                     hot.message = hot.square.fetch_hot_text(hot)
 
                 if hot.message:
@@ -149,5 +149,5 @@ class DiscoveryCommunity(Community):
 
     def on_search(self, messages):
         for message in messages:
-            if __debug__: dprint("searching for \\", message.expression, "\\")
+            if __debug__: dprint("searching for \\", message.payload.expression, "\\")
             # TODO
