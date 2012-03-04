@@ -3,6 +3,7 @@
 
 #QT
 from PyQt4.QtGui import QWidget, QPixmap, QListWidgetItem
+from PyQt4.QtCore import QSize
 
 #Python builtin
 from time import strftime, localtime
@@ -10,14 +11,18 @@ from time import strftime, localtime
 #Local
 from ui.chatmessage import Ui_ChatMessage
 
-__all__ = ['ChatMessageWidget',]
+__all__ = ['ChatMessageWidget', 'ChatMessageListItem']
 
 
 class ChatMessageListItem(QListWidgetItem):
-    def __init__(self, nick='', body='', timestamp=None, avatar=None, media=None):
-        super(ChatMessageListItem, self).__init__(type=1001)
+    def __init__(self, parent, *argv, **kwargs):
+        super(ChatMessageListItem, self).__init__(type=QListWidgetItem.UserType)
 
-        print dir(self)
+        self.widget = ChatMessageWidget(*argv, **kwargs)
+        self.setSizeHint(self.widget.minimumSizeHint())
+        parent.addItem(self)
+        parent.setItemWidget(self, self.widget)
+
 
 class ChatMessageWidget(QWidget, Ui_ChatMessage):
     def __init__(self, nick='', body='', timestamp=None, avatar=None, media=None):
@@ -46,4 +51,3 @@ class ChatMessageWidget(QWidget, Ui_ChatMessage):
             self.media_lbl.setText("This message has media, but the coder is lazy.")
         else:
             self.media_lbl.hide()
-

@@ -26,7 +26,7 @@ except (ImportError):
 from PyQt4 import QtGui, QtCore
 
 #Local
-from widgets import ChatMessageWidget, MainWin
+from widgets import ChatMessageListItem, MainWin
 
 # generated: Sun Feb 26 16:54:45 2012
 # curve: high <<< NID_sect571r1 >>>
@@ -100,17 +100,7 @@ class ChatCore:
                 nick = 'NONICK'
                 body = text
 
-        #print ">>>>Z", nick, ";;;;;;", body
-        self.mainwin.message_list.addItem(text)
-        row = self.mainwin.message_list.currentRow()
-        print "XXXXXXXXXX", row
-        current_item = self.mainwin.message_list.item(row)
-        widget = ChatMessageWidget(nick=nick, body=body)
-        self.mainwin.message_list.setItemWidget(current_item, widget)
-        #That's a temporary hack too as with the new message format we will switch to
-        #A model based chat message list widget
-        self.message_references.append(widget)
-
+        ChatMessageListItem(parent=self.mainwin.message_list, nick=nick, body=body)
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
