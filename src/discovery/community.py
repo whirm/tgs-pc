@@ -1,10 +1,11 @@
+from random import sample
 from time import time
 
 from conversion import Conversion
 from payload import HotsPayload
 from hot import Hot, HotCache
 
-from square.community import PreviewSquare
+from square.community import PreviewCommunity
 
 from dispersy.cache import CacheDict
 from dispersy.authentication import MemberAuthentication
@@ -18,9 +19,9 @@ from dispersy.resolution import PublicResolution
 if __debug__:
     from dispersy.dprint import dprint
 
-class Discovery(Community):
+class DiscoveryCommunity(Community):
     def __init__(self, *args):
-        super(Discovery, self).__init__(*args)
+        super(DiscoveryCommunity, self).__init__(*args)
         self._explicitly_hot_messages = []
         self._implicitly_hot_messages = []
         self._top_squares = []
@@ -59,44 +60,50 @@ class Discovery(Community):
                 pass
 
     def _select_and_announce_hot(self):
-        meta = self._meta_messages[u"favorite-square"]
+        meta = self._meta_messages[u"hots"]
         while True:
-            yield 60.0
+            # TODO yield 60.0, lowered for debugging
+            yield 1.0
             # what is hot?
             # explicit: a message the user marked as 'hot'
             # implicit: a newly received message
-            messages = sample(self._explicitly_hot_messages, max(15, len(self._explicitly_hot_messages)))
-            messages.extend(sample(self._implicitly_hot_messages, max(20-len(messages)), len(self._implicitly_hot_messages)))
+            messages = sample(self._explicitly_hot_messages, min(15, len(self._explicitly_hot_messages)))
+            messages.extend(sample(self._implicitly_hot_messages, min(20-len(messages), len(self._implicitly_hot_messages))))
 
-            hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in messages]
-            message = meta.impl(authentication=(self._my_member,), distribution=(self.global_time,), payload=(hots))
-            self._dispersy.store_update_forward([message], False, False, True)
+            if messages:
+                hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in messages]
+                message = meta.impl(authentication=(self._my_member,), distribution=(self.global_time,), payload=(hots,))
+                self._dispersy.store_update_forward([message], False, False, True)
 
     def _collect_top_hots(self):
+        now = time()
+        self._top_squares = []
+        self._top_messages = []
+
+        for index, hot in enumerate(self._hots):
+            if not hot.square:
+                try:
+                    hot.square = self._dispersy.get_community(hot.cid, load=True)
+                except KeyError:
+                    hot.square = PreviewCommunity.join_community(hot.cid, self._my_member)
+
+            if index < 10:
+                if not hot.message and hot.last_requested < now - 10.0:
+                    hot.message = hot.square.fetch_hot_message(hot)
+
+                if hot.message:
+                    self._top_messages.append(hot.message)
+
+            if not hot.square in self._top_squares:
+                self._top_squares.append(hot.square)
+                if len(self._top_squares) == 10:
+                    break
+
+    def _periodically_collect_top_hots(self):
         while True:
-            yield 30.0
-            now = time()
-            self._top_squares = []
-            self._top_messages = []
-
-            for index, hot in enumerate(self._hots):
-                if not hot.square:
-                    try:
-                        hot.square = self._dispersy.get_community(hot.cid, load=True)
-                    except KeyError:
-                        hot.square = PreviewSquare.join_community(hot.cid, self._my_member)
-
-                if index < 10:
-                    if not hot.message and hot.last_requested < now - 10.0:
-                        hot.message = hot.square.fetch_hot_message(hot)
-
-                    if hot.message:
-                        self._top_messages.append(hot.message)
-
-                if not hot.square in self._top_squares:
-                    self._top_squares.append(hot.square)
-                    if len(self._top_squares) == 10:
-                        break
+            # TODO yield 30.0, lowered for debugging
+            yield 1.0
+            self._collect_top_hots()
 
     def on_hots(self, messages):
         for message in messages:
@@ -110,9 +117,5 @@ class Discovery(Community):
 
                 hot.add_source(message.candidate)
 
-    def on_missing_hot(self, messages):
-        for message in messages:
-            # 'upgrade' Hot to HotCache, also modifies importance counters in CacheDict
-            hot = self._hots.get(message.payload.hot)
-            if hot and hot.is_available:
-                self._dispersy._send([message.candidate], [hot.square, hot.message], u"-missing-hot-")
+        if len(self._top_squares) + len(self._top_messages) < 10:
+            self._collect_top_hots()

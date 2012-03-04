@@ -9,7 +9,6 @@ class Conversion(BinaryConversion):
     def __init__(self, community):
         super(Conversion, self).__init__(community, "\x01")
         self.define_meta_message(chr(1), community.get_meta_message(u"hots"), self._encode_hots, self._decode_hots)
-        self.define_meta_message(chr(2), community.get_meta_message(u"missing-hot"), self._encode_missing_hot, self._decode_missing_hot)
 
     def _encode_hots(self, message):
         return [pack("!20c20cQ", hot.cid, hot.mid, hot.global_time)[0] for hot in message.payload.hots]

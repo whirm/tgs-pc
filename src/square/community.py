@@ -190,10 +190,10 @@ class SquareBase(Community):
     def get_hot_message(self, hot):
         members = self._dispersy.get_members_from_id
 
-class Square(SquareBase):
+class SquareCommunity(SquareBase):
     pass
 
-class PreviewSquare(SquareBase):
+class PreviewCommunity(SquareBase):
     @property
     def dispersy_acceptable_global_time_range(self):
         # we will accept the full 64 bit global time range
