@@ -101,6 +101,9 @@ class ChatCore:
                 body = text
 
         ChatMessageListItem(parent=self.mainwin.message_list, nick=nick, body=body)
+        while self.mainwin.message_list.count() > 250:
+            print "Deleting A chat message"
+            self.mainwin.message_list.takeItem(0)
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
