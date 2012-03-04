@@ -60,12 +60,14 @@ if True:
     master_public_key = ";".join(("60", master_public_key[:60].encode("HEX"),
                                                                          ""))
 
-from threading import  current_thread
+from threading import current_thread, Lock
 
 class ChatCore:
     def __init__(self):
         self.nick = "Anon"
         self.message_references=[]
+
+        self.setup_lock=Lock()
 
         print "THREAD init:",  current_thread().name
 
@@ -80,10 +82,8 @@ class ChatCore:
             my_member = Member(ec_to_public_bin(ec), ec_to_private_bin(ec))
             community = ChatCommunity.join_community(master, my_member)
 
-        #pyside:
-        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
-        community.textMessageReceived.connect(self.onTextMessageReceived)
         self.community = community
+        self.setup_lock.release()
 
     def dispersy(self, callback):
         # start Dispersy
@@ -134,6 +134,8 @@ class ChatCore:
             print "Not sending empty message."
 
     def _setupThreads(self):
+        self.setup_lock.acquire()
+
         # start threads
         callback = Callback()
         callback.start(name="Dispersy")
@@ -141,6 +143,16 @@ class ChatCore:
         callback.register(self.dispersy, (callback,))
         callback.register(self.demo, (callback,))
         self.callback = callback
+
+        #pyside:
+        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
+
+        #Wait for the Dispersy thread to instance the Community class so we can connect to its signals
+        self.setup_lock.acquire()
+        self.community.textMessageReceived.connect(self.onTextMessageReceived)
+        self.setup_lock.release()
+        #It won't be used again:
+        del self.setup_lock
 
     def _stopThreads(self):
         self.callback.stop()
