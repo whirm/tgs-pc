@@ -11,7 +11,7 @@ class Conversion(BinaryConversion):
         self.define_meta_message(chr(1), community.get_meta_message(u"hots"), self._encode_hots, self._decode_hots)
 
     def _encode_hots(self, message):
-        return [pack("!20s20sQ", hot.cid, hot.mid, hot.global_time)[0] for hot in message.payload.hots]
+        return [pack("!20s20sQ", hot.cid, hot.mid, hot.global_time) for hot in message.payload.hots]
 
     def _decode_hots(self, placeholder, offset, data):
         hots = []

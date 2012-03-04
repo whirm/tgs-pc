@@ -45,11 +45,13 @@ class DiscoveryCommunity(Community):
     def top_text(self):
         return self._top_text
 
-    def add_explicitly_hot_message(self, message):
+    def add_explicitly_hot_text(self, message):
+        # TODO all messages should be unique
         self._explicitly_hot_text.append(message)
         del self._explicitly_hot_text[20:]
 
     def add_implicitly_hot_text(self, messages):
+        # TODO all messages should be unique
         self._implicitly_hot_text.extend(messages)
         del self._implicitly_hot_text[20:]
 
@@ -69,6 +71,7 @@ class DiscoveryCommunity(Community):
             # implicit: a newly received message
             messages = sample(self._explicitly_hot_text, min(15, len(self._explicitly_hot_text)))
             messages.extend(sample(self._implicitly_hot_text, min(20-len(messages), len(self._implicitly_hot_text))))
+            # TODO all messages should be unique
 
             if messages:
                 if __debug__: dprint(len(messages), "x text")
