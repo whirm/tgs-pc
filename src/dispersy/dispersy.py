@@ -828,9 +828,21 @@ class Dispersy(Singleton):
             packet, = self._database.execute(u"SELECT packet FROM sync WHERE community = ? AND member = ? AND global_time = ?",
                                              (community.database_id, member.database_id, global_time)).next()
         except StopIteration:
-            return None
+            pass
         else:
-            return community.get_conversion(packet[:22]).decode_message(LoopbackCandidate(), packet)
+            return self.convert_packet_to_message(packet, community)
+        return None
+
+    def get_last_message(self, meta, community, member, minimal_global_time=0):
+        try:
+            global_time, packet = self._database.execute(u"SELECT global_time, packet FROM sync WHERE meta_message = ? AND member = ? ORDER BY global_time DESC LIMIT 1",
+                                                         (meta.database_id, member.database_id)).next()
+        except StopIteration:
+            pass
+        else:
+            if minimal_global_time <= global_time:
+                return self.convert_packet_to_message(packet, community)
+        return None
 
     def wan_address_vote(self, address, voter):
         """
