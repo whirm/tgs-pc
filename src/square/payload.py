@@ -60,7 +60,7 @@ class SquareInfoPayload(Payload):
         def radius(self):
             return self._radius
 
-class MessagePayload(Payload):
+class TextPayload(Payload):
     class Implementation(Payload.Implementation):
         def __init__(self, meta, member_info, text, media_hash):
             if __debug__:
@@ -70,7 +70,7 @@ class MessagePayload(Payload):
             assert len(text.encode("UTF-8")) < 1024
             assert isinstance(media_hash, str)
             assert media_hash == "" or len(media_hash) == 20
-            super(MessagePayload.Implementation, self).__init__(meta)
+            super(TextPayload.Implementation, self).__init__(meta)
             self._member_info = member_info
             self._text = text
             self._media_hash = media_hash

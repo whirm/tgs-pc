@@ -8,7 +8,7 @@ class Conversion(BinaryConversion):
         super(Conversion, self).__init__(community, "\x01")
         self.define_meta_message(chr(2), community.get_meta_message(u"member-info"), self._encode_member_info, self._decode_member_info)
         self.define_meta_message(chr(3), community.get_meta_message(u"square-info"), self._encode_square_info, self._decode_square_info)
-        self.define_meta_message(chr(4), community.get_meta_message(u"message"), self._encode_message, self._decode_message)
+        self.define_meta_message(chr(4), community.get_meta_message(u"text"), self._encode_text, self._decode_text)
 
     def _encode_member_info(self, message):
         alias = message.payload.alias.encode("UTF-8")
@@ -92,13 +92,13 @@ class Conversion(BinaryConversion):
 
         return offset, placeholder.meta.payload.implement(title, description, thumbnail_hash, (longitude, latitude), radius)
 
-    def _encode_message(self, message):
+    def _encode_text(self, message):
         member_info_global_time = message.payload.member_info.distribution.global_time
         text = message.payload.text.encode("UTF-8")
-        thumbnail_hash = message.payload.thumbnail_hash or "\x00" * 20
-        return pack("!QH", member_info_global_time, min(len(text), 1024-1)), text[:1024], thumbnail_hash
+        media_hash = message.payload.media_hash or "\x00" * 20
+        return pack("!QH", member_info_global_time, min(len(text), 1024-1)), text[:1024], media_hash
 
-    def _decode_message(self, placeholder, offset, data):
+    def _decode_text(self, placeholder, offset, data):
         if len(data) < offset + 2:
             raise DropPacket("Insufficient packet size")
         member_info_global_time, text_length = unpack_from("!QH", data, offset)

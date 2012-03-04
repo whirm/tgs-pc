@@ -11,14 +11,14 @@ class Conversion(BinaryConversion):
         self.define_meta_message(chr(1), community.get_meta_message(u"hots"), self._encode_hots, self._decode_hots)
 
     def _encode_hots(self, message):
-        return [pack("!20c20cQ", hot.cid, hot.mid, hot.global_time)[0] for hot in message.payload.hots]
+        return [pack("!20s20sQ", hot.cid, hot.mid, hot.global_time)[0] for hot in message.payload.hots]
 
     def _decode_hots(self, placeholder, offset, data):
         hots = []
         while len(data) > offset:
             if len(data) < offset + 48:
                 raise DropPacket("Insufficient packet size")
-            cid, mid, global_time = unpack_from("!20c20cQ", data, offset)
+            cid, mid, global_time = unpack_from("!20s20sQ", data, offset)
             offset += 48
             hots.append(Hot(cid, mid, global_time))
 

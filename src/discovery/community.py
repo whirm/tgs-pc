@@ -22,10 +22,10 @@ if __debug__:
 class DiscoveryCommunity(Community):
     def __init__(self, *args):
         super(DiscoveryCommunity, self).__init__(*args)
-        self._explicitly_hot_messages = []
-        self._implicitly_hot_messages = []
+        self._explicitly_hot_text = []
+        self._implicitly_hot_text = []
         self._top_squares = []
-        self._top_messages = []
+        self._top_text = []
         self._hots = CacheDict(max_caches=1024)
         self._pending_callbacks.append(self._dispersy.callback.register(self._select_and_announce_hot))
         self._pending_callbacks.append(self._dispersy.callback.register(self._collect_top_hots))
@@ -42,16 +42,16 @@ class DiscoveryCommunity(Community):
         return self._top_squares
 
     @property
-    def top_messages(self):
-        return self._top_messages
+    def top_text(self):
+        return self._top_text
 
     def add_explicitly_hot_message(self, message):
-        self._explicitly_hot_messages.append(message)
-        del self._explicitly_hot_messages[20:]
+        self._explicitly_hot_text.append(message)
+        del self._explicitly_hot_text[20:]
 
-    def add_implicitly_hot_messages(self, messages):
-        self._implicitly_hot_messages.extend(messages)
-        del self._implicitly_hot_messages[20:]
+    def add_implicitly_hot_text(self, messages):
+        self._implicitly_hot_text.extend(messages)
+        del self._implicitly_hot_text[20:]
 
     def _hot_cleanup(self):
         while True:
@@ -67,10 +67,11 @@ class DiscoveryCommunity(Community):
             # what is hot?
             # explicit: a message the user marked as 'hot'
             # implicit: a newly received message
-            messages = sample(self._explicitly_hot_messages, min(15, len(self._explicitly_hot_messages)))
-            messages.extend(sample(self._implicitly_hot_messages, min(20-len(messages), len(self._implicitly_hot_messages))))
+            messages = sample(self._explicitly_hot_text, min(15, len(self._explicitly_hot_text)))
+            messages.extend(sample(self._implicitly_hot_text, min(20-len(messages), len(self._implicitly_hot_text))))
 
             if messages:
+                if __debug__: dprint(len(messages), "x text")
                 hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in messages]
                 message = meta.impl(authentication=(self._my_member,), distribution=(self.global_time,), payload=(hots,))
                 self._dispersy.store_update_forward([message], False, False, True)
@@ -78,7 +79,7 @@ class DiscoveryCommunity(Community):
     def _collect_top_hots(self):
         now = time()
         self._top_squares = []
-        self._top_messages = []
+        self._top_text = []
 
         for index, hot in enumerate(self._hots):
             if not hot.square:
@@ -92,12 +93,18 @@ class DiscoveryCommunity(Community):
                     hot.message = hot.square.fetch_hot_message(hot)
 
                 if hot.message:
-                    self._top_messages.append(hot.message)
+                    self._top_text.append(hot.message)
 
             if not hot.square in self._top_squares:
                 self._top_squares.append(hot.square)
                 if len(self._top_squares) == 10:
                     break
+
+        if __debug__:
+            for index, square in enumerate(self._top_squares):
+                dprint(index, "] SQUARE ", square.cid.encode("HEX"), " - ", square.title)
+            for index, message in enumerate(self._top_text):
+                dprint(index, "]   TEXT ", message.community.cid.encode("HEX"), " - ", message.payload.text)
 
     def _periodically_collect_top_hots(self):
         while True:
@@ -117,5 +124,5 @@ class DiscoveryCommunity(Community):
 
                 hot.add_source(message.candidate)
 
-        if len(self._top_squares) + len(self._top_messages) < 10:
+        if len(self._top_squares) + len(self._top_text) < 10:
             self._collect_top_hots()
