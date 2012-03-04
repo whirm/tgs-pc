@@ -32,6 +32,10 @@ from threading import Lock
 #Local
 from widgets import ChatMessageListItem, MainWin
 
+#Die with ^C
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 class ChatCore:
     def __init__(self):
         self.nick = "Anon"
