@@ -50,14 +50,12 @@ class ChatCore:
             # when crypto.py is disabled a public key is slightly
             # different...
             public_key = ";".join(("60", public_key[:60].encode("HEX"), ""))
-        master = Member.get_instance(public_key)
+        master = Member(public_key)
         try:
             self._discovery = DiscoveryCommunity.load_community(master)
         except ValueError:
             ec = ec_generate_key(u"low")
-            self._my_member = Member.get_instance(ec_to_public_bin(ec),
-                                                  ec_to_private_bin(ec),
-                                                  sync_with_database=True)
+            self._my_member = Member(ec_to_public_bin(ec), ec_to_private_bin(ec))
             self._discovery = DiscoveryCommunity.join_community(master, self._my_member)
         else:
             self._my_member = self._discovery.my_member

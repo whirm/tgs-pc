@@ -7,7 +7,7 @@ from hot import Hot, HotCache
 
 from square.community import PreviewCommunity
 
-from dispersy.member import Member
+from dispersy.member import DummyMember
 from dispersy.cache import CacheDict
 from dispersy.authentication import NoAuthentication
 from dispersy.community import Community
@@ -93,7 +93,7 @@ class DiscoveryCommunity(Community):
                 try:
                     hot.square = self._dispersy.get_community(hot.cid, load=True)
                 except KeyError:
-                    master = Member.get_instance(hot.cid, public_key_available=False)
+                    master = DummyMember(hot.cid)
                     hot.square = PreviewCommunity.join_community(master, self._my_member, self)
 
             if index < 10:
