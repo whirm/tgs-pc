@@ -17,13 +17,16 @@ from dispersy.crypto import (ec_generate_key,
 
 try:
     from ui.main import Ui_TheGlobalSquare
+    from ui.square import Ui_SquareDialog
 except (ImportError):
     print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
     sys.exit()
-    
 
 #from PySide import QtGui, QtCore
 from PyQt4 import QtGui, QtCore
+
+#Local
+from widgets import ChatMessageListItem, MainWin
 
 # generated: Sun Feb 26 16:54:45 2012
 # curve: high <<< NID_sect571r1 >>>
@@ -57,10 +60,14 @@ if True:
     master_public_key = ";".join(("60", master_public_key[:60].encode("HEX"),
                                                                          ""))
 
+from threading import Lock
 
 class ChatCore:
     def __init__(self):
         self.nick = "Anon"
+        self.message_references=[]
+
+        self.setup_lock=Lock()
 
     def demo(self, callback):
         dispersy = Dispersy.get_instance()
@@ -73,10 +80,8 @@ class ChatCore:
             my_member = Member(ec_to_public_bin(ec), ec_to_private_bin(ec))
             community = ChatCommunity.join_community(master, my_member)
 
-        #pyside:
-        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
-        community.textMessageReceived.connect(self.onTextMessageReceived)
         self.community = community
+        self.setup_lock.release()
 
     def dispersy(self, callback):
         # start Dispersy
@@ -85,7 +90,20 @@ class ChatCore:
         return dispersy
 
     def onTextMessageReceived(self, text):
-        self.mainwin.message_list.addItem(text)
+        #TODO: Temporary hack until we use the new chat message:
+        try:
+            nick, body = text.split(' writes ', 1)
+        except ValueError:
+            try:
+                nick, body = text.split(': ', 1)
+            except ValueError:
+                nick = 'NONICK'
+                body = text
+
+        ChatMessageListItem(parent=self.mainwin.message_list, nick=nick, body=body)
+        while self.mainwin.message_list.count() > 250:
+            print "Deleting A chat message"
+            self.mainwin.message_list.takeItem(0)
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
@@ -106,6 +124,8 @@ class ChatCore:
             print "Not sending empty message."
 
     def _setupThreads(self):
+        self.setup_lock.acquire()
+
         # start threads
         callback = Callback()
         callback.start(name="Dispersy")
@@ -113,6 +133,16 @@ class ChatCore:
         callback.register(self.dispersy, (callback,))
         callback.register(self.demo, (callback,))
         self.callback = callback
+
+        #pyside:
+        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
+
+        #Wait for the Dispersy thread to instance the Community class so we can connect to its signals
+        self.setup_lock.acquire()
+        self.community.textMessageReceived.connect(self.onTextMessageReceived)
+        self.setup_lock.release()
+        #It won't be used again:
+        del self.setup_lock
 
     def _stopThreads(self):
         self.callback.stop()
@@ -144,18 +174,6 @@ class ChatCore:
 
         #Destroy dispersy threads
         self._stopThreads()
-
-
-class MainWin(QtGui.QMainWindow, Ui_TheGlobalSquare):
-    def __init__(self, *argv, **kwargs):
-        super(MainWin, self).__init__(*argv, **kwargs)
-        #super(Ui_MainWindow, self).__init__(*argv, **kwargs)
-        self.setupUi(self)
-
-        #We want the message list to scroll to the bottom every time we send or receive a new message.
-        message_model = self.message_list.model()
-        message_model.rowsInserted.connect(self.message_list.scrollToBottom)
-
 
 if __name__ == "__main__":
     exit_exception = None

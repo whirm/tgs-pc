@@ -25,7 +25,7 @@ class SquareInfoPayload(Payload):
             assert isinstance(title, unicode)
             assert len(title.encode("UTF-8")) < 256
             assert isinstance(description, unicode)
-            assert len(title.encode("UTF-8")) < 1024
+            assert len(description.encode("UTF-8")) < 1024
             assert isinstance(thumbnail_hash, str)
             assert thumbnail_hash == "" or len(thumbnail_hash) == 20
             assert isinstance(location, tuple)
