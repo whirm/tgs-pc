@@ -830,7 +830,7 @@ class Dispersy(Singleton):
         except StopIteration:
             pass
         else:
-            return self.convert_packet_to_message(packet, community)
+            return self.convert_packet_to_message(str(packet), community)
         return None
 
     def get_last_message(self, meta, community, member, minimal_global_time=0):
@@ -841,7 +841,7 @@ class Dispersy(Singleton):
             pass
         else:
             if minimal_global_time <= global_time:
-                return self.convert_packet_to_message(packet, community)
+                return self.convert_packet_to_message(str(packet), community)
         return None
 
     def wan_address_vote(self, address, voter):
@@ -2835,14 +2835,14 @@ class Dispersy(Singleton):
             assert isinstance(candidate, Candidate)
             assert isinstance(member, Member)
             assert isinstance(global_time, (int, long))
-            assert callable(response_func)
+            assert response_func is None or callable(response_func)
             assert isinstance(response_args, tuple)
             assert isinstance(timeout, float)
             assert timeout > 0.0
             assert isinstance(forward, bool)
 
         meta = community.get_meta_message(u"dispersy-missing-message")
-        request = meta.impl(distribution=(meta.community.global_time,), destination=(candidate,), payload=(member, global_time))
+        request = meta.impl(distribution=(meta.community.global_time,), destination=(candidate,), payload=(member, [global_time]))
 
         if response_func:
             # generate footprint

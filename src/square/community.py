@@ -17,16 +17,10 @@ if __debug__:
 class SquareBase(Community):
     def __init__(self, master, discovery):
         self._state = DummyState()
-        self._discovery = discovery
-
         super(SquareBase, self).__init__(master)
 
-        try:
-            packet, = self._dispersy.database.execute(u"SELECT packet FROM sync WHERE meta_message = ? AND member = ? ORDER BY global_time DESC LIMIT 1", (self._meta_messages[u"member-info"].database_id, self._my_member.database_id)).next()
-        except StopIteration:
-            self._my_member_info = None
-        else:
-            self._my_member_info = self._dispersy.convert_packet_to_message(str(packet), self)
+        self._discovery = discovery
+        self._my_member_info = self._dispersy.get_last_message(self._meta_messages[u"member-info"], self, self._my_member)
 
         # if self._my_member_info is None:
         #     def dummy_member_info():
@@ -35,11 +29,12 @@ class SquareBase(Community):
         #     self._dispersy.callback.register(dummy_member_info)
 
         try:
-            packet, = self._dispersy.database.execute(u"SELECT packet FROM sync WHERE meta_message = ? ORDER BY global_time DESC LIMIT 1", (self._meta_messages[u"member-info"].database_id,)).next()
+            packet, = self._dispersy.database.execute(u"SELECT packet FROM sync WHERE meta_message = ? ORDER BY global_time DESC LIMIT 1", (self._meta_messages[u"square-info"].database_id,)).next()
         except StopIteration:
             self._square_info = None
         else:
             self._square_info = self._dispersy.convert_packet_to_message(str(packet), self)
+            assert self._square_info.name == u"square-info"
 
         # if self._square_info is None:
         #     def dummy_square_info():
@@ -223,7 +218,7 @@ class SquareBase(Community):
         pass
 
     def fetch_hot_text(self, hot):
-        members = self._dispersy.get_members_from_id(hot.mid)
+        members = self.get_members_from_id(hot.mid)
         if not members:
             # TODO I believe that there is such a method in the new dispersy release
             self._dispersy.create_missing_member()
@@ -234,7 +229,7 @@ class SquareBase(Community):
             if message:
                 return message
             else:
-                candidate = top.candidates.pop(0)
+                candidate = hot.sources.pop(0)
                 self._dispersy.create_missing_message(self, candidate, member, hot.global_time)
 
 class SquareCommunity(SquareBase):
