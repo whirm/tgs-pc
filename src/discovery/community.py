@@ -2,14 +2,14 @@ from random import sample
 from time import time
 
 from conversion import Conversion
-from payload import HotsPayload
+from payload import HotsPayload, SearchPayload
 from hot import Hot, HotCache
 
 from square.community import PreviewCommunity
 
 from dispersy.member import Member
 from dispersy.cache import CacheDict
-from dispersy.authentication import MemberAuthentication
+from dispersy.authentication import NoAuthentication
 from dispersy.community import Community
 from dispersy.conversion import DefaultConversion
 from dispersy.destination import CommunityDestination
@@ -29,11 +29,12 @@ class DiscoveryCommunity(Community):
         self._top_text = []
         self._hots = CacheDict(max_caches=1024)
         self._pending_callbacks.append(self._dispersy.callback.register(self._select_and_announce_hot))
-        self._pending_callbacks.append(self._dispersy.callback.register(self._collect_top_hots))
+        self._pending_callbacks.append(self._dispersy.callback.register(self._periodically_collect_top_hots))
         self._pending_callbacks.append(self._dispersy.callback.register(self._hot_cleanup))
 
     def initiate_meta_messages(self):
-        return [Message(self, u"hots", MemberAuthentication(encoding="sha1"), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=5), HotsPayload(), self._dispersy._generic_timeline_check, self.on_hots)]
+        return [Message(self, u"hots", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=5), HotsPayload(), self._dispersy._generic_timeline_check, self.on_hots),
+                Message(self, u"search", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchPayload(), self._dispersy._generic_timeline_check, self.on_search)]
 
     def initiate_conversions(self):
         return [DefaultConversion(self), Conversion(self)]
@@ -66,7 +67,7 @@ class DiscoveryCommunity(Community):
         meta = self._meta_messages[u"hots"]
         while True:
             # TODO yield 60.0, lowered for debugging
-            yield 1.0
+            yield 10.0
             # what is hot?
             # explicit: a message the user marked as 'hot'
             # implicit: a newly received message
@@ -77,7 +78,7 @@ class DiscoveryCommunity(Community):
             if messages:
                 if __debug__: dprint(len(messages), "x text")
                 hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in messages]
-                message = meta.impl(authentication=(self._my_member,), distribution=(self.global_time,), payload=(hots,))
+                message = meta.impl(distribution=(self.global_time,), payload=(hots,))
                 self._dispersy.store_update_forward([message], False, False, True)
 
     def _collect_top_hots(self):
@@ -116,7 +117,7 @@ class DiscoveryCommunity(Community):
     def _periodically_collect_top_hots(self):
         while True:
             # TODO yield 30.0, lowered for debugging
-            yield 1.0
+            yield 10.0
             self._collect_top_hots()
 
     def on_hots(self, messages):
@@ -136,3 +137,17 @@ class DiscoveryCommunity(Community):
 
         if len(self._top_squares) + len(self._top_text) < 10:
             self._collect_top_hots()
+
+    def keyword_search(self, keywords):
+        return self.expression_search(u"|".join(keywords))
+            
+    def expression_search(self, expression):
+        meta = self._meta_messages[u"search"]
+        message = meta.impl(distribution=(self.global_time,), payload=(expression,))
+        self._dispersy.store_update_forward([message], False, False, True)
+        return message
+
+    def on_search(self, messages):
+        for message in messages:
+            if __debug__: dprint("searching for \\", message.expression, "\\")
+            # TODO
