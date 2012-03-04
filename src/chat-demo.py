@@ -60,7 +60,7 @@ if True:
     master_public_key = ";".join(("60", master_public_key[:60].encode("HEX"),
                                                                          ""))
 
-from threading import current_thread, Lock
+from threading import Lock
 
 class ChatCore:
     def __init__(self):
@@ -68,8 +68,6 @@ class ChatCore:
         self.message_references=[]
 
         self.setup_lock=Lock()
-
-        print "THREAD init:",  current_thread().name
 
     def demo(self, callback):
         dispersy = Dispersy.get_instance()
@@ -106,7 +104,6 @@ class ChatCore:
         self.mainwin.message_list.addItem(text)
         row = self.mainwin.message_list.currentRow()
         print "XXXXXXXXXX", row
-        print "THREAD onmessagereceived",  current_thread().name
         current_item = self.mainwin.message_list.item(row)
         widget = ChatMessageWidget(nick=nick, body=body)
         self.mainwin.message_list.setItemWidget(current_item, widget)
