@@ -21,6 +21,10 @@ from ui.main import Ui_MainWindow
 #from PySide import QtGui, QtCore
 from PyQt4 import QtGui, QtCore
 
+#Die with ^C
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 class ChatCore:
     def __init__(self):
         self.nick = "Anon"
