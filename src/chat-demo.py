@@ -7,7 +7,7 @@ import time
 import sys
 
 from discovery.community import DiscoveryCommunity
-from square.community import SquareCommunity
+from square.community import PreviewCommunity, SquareCommunity
 
 from dispersy.callback import Callback
 from dispersy.dispersy import Dispersy
@@ -43,7 +43,6 @@ class ChatCore:
         # start Dispersy
         dispersy = Dispersy.get_instance(callback, u".")
         dispersy.socket = communication.get_socket(callback, dispersy)
-        dispersy.define_auto_load(SquareCommunity)
 
         # load/join discovery community
         public_key = "3081a7301006072a8648ce3d020106052b81040027038192000406b34f060c416e452fd31fb1770c2f475e928effce751f2f82565bec35c46a97fb8b375cca4ac5dc7d93df1ba594db335350297f003a423e207b53709e6163b7688c0f60a9cf6599037829098d5fbbfe786e0cb95194292f241ff6ae4d27c6414f94de7ed1aa62f0eb6ef70d2f5af97c9aade8266eb85b14296ed2004646838c056d1d9ad8a509b69f81fbc726201b57".decode("HEX")
@@ -53,15 +52,18 @@ class ChatCore:
             public_key = ";".join(("60", public_key[:60].encode("HEX"), ""))
         master = Member.get_instance(public_key)
         try:
-            community = DiscoveryCommunity.load_community(master)
+            self._discovery = DiscoveryCommunity.load_community(master)
         except ValueError:
             ec = ec_generate_key(u"low")
-            my_member = Member.get_instance(ec_to_public_bin(ec),
-                                            ec_to_private_bin(ec),
-                                            sync_with_database=True)
-            community = DiscoveryCommunity.join_community(master, my_member)
+            self._my_member = Member.get_instance(ec_to_public_bin(ec),
+                                                  ec_to_private_bin(ec),
+                                                  sync_with_database=True)
+            self._discovery = DiscoveryCommunity.join_community(master, self._my_member)
         else:
-            my_member = community.my_member
+            self._my_member = self._discovery.my_member
+
+        dispersy.define_auto_load(PreviewCommunity, (self._discovery,))
+        dispersy.define_auto_load(SquareCommunity, (self._discovery,))
 
         self.community = community
         self.setup_lock.release()
@@ -70,6 +72,30 @@ class ChatCore:
         for master in SquareCommunity.get_master_members():
             yield 1.0
             dispersy.get_community(master.mid)
+
+    def DEBUG_SIMULATION(self):
+        yield 5.0
+
+        # user clicked the 'create new square' button
+        community = SquareCommunity.create_community(self._my_member, self._discovery)
+        yield 1.0
+
+        # user clicked the 'update my member info' button
+        community.set_my_member_info(u"SIM nickname", "")
+        yield 1.0
+
+        # user clicked the 'update square info' button
+        community.set_square_info(u"SIM title", u"SIM description", "", (0, 0), 0)
+        yield 1.0
+
+        for index in xrange(5):
+            # user clicked the 'post message' button
+            community.post_text(u"SIM message %d" % index, "")
+            yield 1.0
+
+        for index in xrange(5):
+            # user clicked the 'search' button
+            self._discovery.keyword_search([u"SIM", u"%d" % index])
 
     def onTextMessageReceived(self, text):
         #TODO: Temporary hack until we use the new chat message:
@@ -113,6 +139,7 @@ class ChatCore:
         callback.start(name="Dispersy")
 
         callback.register(self.dispersy, (callback,))
+        callback.register(self.DEBUG_SIMULATION)
         self.callback = callback
 
         #pyside:
