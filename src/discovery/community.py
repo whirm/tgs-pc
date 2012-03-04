@@ -97,7 +97,7 @@ class DiscoveryCommunity(Community):
 
             if index < 10:
                 if not hot.message and hot.last_requested < now - 10.0:
-                    hot.message = hot.square.fetch_hot_message(hot)
+                    hot.message = hot.square.fetch_hot_text(hot)
 
                 if hot.message:
                     self._top_text.append(hot.message)

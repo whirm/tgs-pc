@@ -222,7 +222,7 @@ class SquareBase(Community):
     def undo_text(self, *args):
         pass
 
-    def get_hot_text(self, hot):
+    def fetch_hot_text(self, hot):
         members = self._dispersy.get_members_from_id(hot.mid)
         if not members:
             # TODO I believe that there is such a method in the new dispersy release
