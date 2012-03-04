@@ -205,7 +205,7 @@ class SquareBase(Community):
         self._dispersy.store_update_forward([message], True, True, True)
         return message
 
-    def on_text(self, messages):
+    def on_text(self, messages, mark_as_hot=True):
         self._discovery.add_implicitly_hot_text(messages)
 
         for message in messages:
@@ -236,11 +236,14 @@ class SquareCommunity(SquareBase):
     pass
 
 class PreviewCommunity(SquareBase):
-    @property
-    def dispersy_acceptable_global_time_range(self):
-        # we will accept the full 64 bit global time range
-        return 2**64 - self._global_time
+    def on_text(self, messages, mark_as_hot=False):
+        return super(PreviewCommunity, self).on_text(messages, mark_as_hot=mark_as_hot)
 
-    @property
-    def dispersy_enable_candidate_walker(self):
-        return False
+    # @property
+    # def dispersy_acceptable_global_time_range(self):
+    #     # we will accept the full 64 bit global time range
+    #     return 2**64 - self._global_time
+
+    # @property
+    # def dispersy_enable_candidate_walker(self):
+    #     return False
