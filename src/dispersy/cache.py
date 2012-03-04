@@ -60,7 +60,7 @@ class CacheDict(object):
         """
         Iterate though the cache ordered by higher poke counts first
         """
-        return (key for key, _ in sorted(self._dict.iteritems(), key=lambda _, cache: cache.__poke_count, reverse=True))
+        return (key for key, _ in sorted(self._dict.iteritems(), key=lambda (_, cache): cache.__poke_count, reverse=True))
 
     def cleanup(self):
         """

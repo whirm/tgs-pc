@@ -7,6 +7,7 @@ from hot import Hot, HotCache
 
 from square.community import PreviewCommunity
 
+from dispersy.member import Member
 from dispersy.cache import CacheDict
 from dispersy.authentication import MemberAuthentication
 from dispersy.community import Community
@@ -81,12 +82,15 @@ class DiscoveryCommunity(Community):
         self._top_squares = []
         self._top_text = []
 
-        for index, hot in enumerate(self._hots):
+        for index, key in enumerate(self._hots):
+            hot = self._hots[key]
+            assert isinstance(hot, HotCache), hot
             if not hot.square:
                 try:
                     hot.square = self._dispersy.get_community(hot.cid, load=True)
                 except KeyError:
-                    hot.square = PreviewCommunity.join_community(hot.cid, self._my_member)
+                    master = Member.get_instance(hot.cid, public_key_available=False)
+                    hot.square = PreviewCommunity.join_community(master, self._my_member, self)
 
             if index < 10:
                 if not hot.message and hot.last_requested < now - 10.0:
@@ -115,12 +119,15 @@ class DiscoveryCommunity(Community):
     def on_hots(self, messages):
         for message in messages:
             for hot in message.payload.hots:
+                key = hot.key
 
                 # 'upgrade' Hot to HotCache, also modifies importance counters in CacheDict
-                if hot in self._hots:
-                    self._hots[hot] = hot = HotCache(hot)
+                if key in self._hots:
+                    hot = self._hots[key]
                 else:
-                    hot = self._hots[hot]
+                    self._hots[key] = hot = HotCache(hot)
+                assert isinstance(hot, HotCache), hot
+                assert isinstance(self._hots[key], HotCache), self._hots[key]
 
                 hot.add_source(message.candidate)
 

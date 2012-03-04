@@ -4,8 +4,9 @@ class Hot(object):
         self._mid = mid
         self._global_time = global_time
 
-    def __hash__(self):
-        return hash((self._cid, self._mid, self._global_time))
+    @property
+    def key(self):
+        return (self._cid, self._mid, self._global_time)
 
     @property
     def cid(self):
@@ -32,17 +33,21 @@ class HotCache(Hot):
     def sources(self):
         return self._sources
 
-    # @property
-    # def is_available(self):
-    #     return self._square and self._message
-
     @property
     def square(self):
         return self._square
 
+    @square.setter
+    def square(self, square):
+        self._square = square
+
     @property
     def message(self):
         return self._message
+
+    @message.setter
+    def message(self, message):
+        self._message = message
 
     @property
     def last_requested(self):
@@ -55,7 +60,7 @@ class HotCache(Hot):
     def add_source(self, candidate):
         try:
             self._sources.remove(candidate)
-        except KeyError:
+        except ValueError:
             pass
         else:
             if len(self._sources) > 10:

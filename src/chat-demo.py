@@ -7,7 +7,7 @@ import time
 import sys
 
 from discovery.community import DiscoveryCommunity
-from square.community import SquareCommunity
+from square.community import PreviewCommunity, SquareCommunity
 
 from dispersy.callback import Callback
 from dispersy.dispersy import Dispersy
@@ -48,6 +48,7 @@ class ChatCore:
         else:
             self._my_member = self._discovery.my_member
 
+        dispersy.define_auto_load(PreviewCommunity, (self._discovery,))
         dispersy.define_auto_load(SquareCommunity, (self._discovery,))
 
         # load squares
