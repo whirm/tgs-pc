@@ -114,7 +114,7 @@ class ChatCore:
         callback.register(self.demo, (callback,))
         self.callback = callback
 
-    def _stopThreads():
+    def _stopThreads(self):
         self.callback.stop()
 
         if self.callback.exception:
