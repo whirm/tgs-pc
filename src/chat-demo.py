@@ -25,6 +25,9 @@ except (ImportError):
 #from PySide import QtGui, QtCore
 from PyQt4 import QtGui, QtCore
 
+#Local
+from widgets import ChatMessageWidget, MainWin
+
 # generated: Sun Feb 26 16:54:45 2012
 # curve: high <<< NID_sect571r1 >>>
 # len: 571 bits ~ 144 bytes signature
@@ -57,10 +60,14 @@ if True:
     master_public_key = ";".join(("60", master_public_key[:60].encode("HEX"),
                                                                          ""))
 
+from threading import  current_thread
 
 class ChatCore:
     def __init__(self):
         self.nick = "Anon"
+        self.message_references=[]
+
+        print "THREAD init:",  current_thread().name
 
     def demo(self, callback):
         dispersy = Dispersy.get_instance()
@@ -85,7 +92,28 @@ class ChatCore:
         return dispersy
 
     def onTextMessageReceived(self, text):
+        #TODO: Temporary hack until we use the new chat message:
+        try:
+            nick, body = text.split(' writes ', 1)
+        except ValueError:
+            try:
+                nick, body = text.split(': ', 1)
+            except ValueError:
+                nick = 'NONICK'
+                body = text
+
+        #print ">>>>Z", nick, ";;;;;;", body
         self.mainwin.message_list.addItem(text)
+        row = self.mainwin.message_list.currentRow()
+        print "XXXXXXXXXX", row
+        print "THREAD onmessagereceived",  current_thread().name
+        current_item = self.mainwin.message_list.item(row)
+        widget = ChatMessageWidget(nick=nick, body=body)
+        self.mainwin.message_list.setItemWidget(current_item, widget)
+        #That's a temporary hack too as with the new message format we will switch to
+        #A model based chat message list widget
+        self.message_references.append(widget)
+
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
@@ -114,7 +142,7 @@ class ChatCore:
         callback.register(self.demo, (callback,))
         self.callback = callback
 
-    def _stopThreads():
+    def _stopThreads(self):
         self.callback.stop()
 
         if self.callback.exception:
@@ -144,40 +172,6 @@ class ChatCore:
 
         #Destroy dispersy threads
         self._stopThreads()
-
-
-class MainWin(QtGui.QMainWindow, Ui_TheGlobalSquare):
-    def __init__(self, *argv, **kwargs):
-        super(MainWin, self).__init__(*argv, **kwargs)
-        #super(Ui_MainWindow, self).__init__(*argv, **kwargs)
-        self.setupUi(self)
-
-        #We want the message list to scroll to the bottom every time we send or receive a new message.
-        message_model = self.message_list.model()
-        message_model.rowsInserted.connect(self.message_list.scrollToBottom)
-
-        #Debug/demo stuff we will remove as functionality is implemented:
-        self.showSquare_btn.clicked.connect(self.onDemoShowSquare)
-
-    def onDemoShowSquare(self):
-        #Keep a reference to it so it doesn't get destroyed
-        self.square_dialog = SquareDialog()
-        self.square_dialog.show()
-
-
-class SquareDialog(QtGui.QDialog, Ui_SquareDialog):
-    def __init__(self, *argv, **kwargs):
-        super(SquareDialog, self).__init__(*argv, **kwargs)
-        self.setupUi(self)
-
-        #Connect the joinSquare button to its callback
-        self.joinSquare_btn.clicked.connect(self.onJoinSquareClicked)
-
-    def onJoinSquareClicked(self):
-        msgBox = QtGui.QMessageBox()
-        msgBox.setText("You wish!")
-        self.close()
-        msgBox.exec_()
 
 if __name__ == "__main__":
     exit_exception = None
