@@ -45,8 +45,6 @@ class SquareBase(Community):
 
         self.events = getEventBroker(self)
         self.global_events = getEventBroker(None)
-        #Notify about new square creation (TODO: Should this be here?)
-        self.global_events.newSquareCreated(self)
 
     def initiate_meta_messages(self):
         return [Message(self, u"member-info", MemberAuthentication(encoding="sha1"), DynamicResolution(PublicResolution(), LinearResolution()), LastSyncDistribution(synchronization_direction=u"ASC", priority=16, history_size=1), CommunityDestination(node_count=0), MemberInfoPayload(), self._dispersy._generic_timeline_check, self.on_member_info, self.undo_member_info),
@@ -240,9 +238,17 @@ class SquareBase(Community):
                 self._dispersy.create_missing_message(self, candidate, member, hot.global_time)
 
 class SquareCommunity(SquareBase):
-    pass
+    def __init__(self, *argv, **kwargs):
+        super(SquareCommunity, self).__init__(*argv, **kwargs)
+        #Notify about new square creation
+        self.global_events.newCommunityCreated(self)
 
 class PreviewCommunity(SquareBase):
+    def __init__(self, *argv, **kwargs):
+        super(PreviewCommunity, self).__init__(*argv, **kwargs)
+        #Notify about new square creation
+        self.global_events.newPreviewCommunityCreated(self)
+
     def on_text(self, messages, mark_as_hot=False):
         return super(PreviewCommunity, self).on_text(messages, mark_as_hot=mark_as_hot)
 

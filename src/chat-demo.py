@@ -136,9 +136,15 @@ class ChatCore:
         else:
             print "Not sending empty message."
 
-    def onNewSquareCreated(self, square):
+    def onNewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
         print "NEW SQUAREEE!!!!1!1!1!!", square
+        self.mainwin.squares_list.addItem(square.title)
+
+    def onNewPreviewCommunityCreated(self, square):
+        #TODO: We need to update the squares list here.
+        print "NEW Suggested SQUAREEE!!!!1!1!1!!", square
+        self.mainwin.suggested_squares_list.addItem(square.title)
 
     def _setupThreads(self):
 
@@ -174,7 +180,8 @@ class ChatCore:
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
-        global_events.qt.newSquareCreated.connect(self.onNewSquareCreated)
+        global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
+        global_events.qt.newPreviewCommunityCreated.connect(self.onNewPreviewCommunityCreated)
 
         #Setup dispersy threads
         self._setupThreads()

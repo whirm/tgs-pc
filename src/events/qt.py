@@ -3,7 +3,7 @@
 
 from PyQt4.QtCore import QObject, SIGNAL, pyqtSignal
 
-from square.community import SquareCommunity
+from square.community import SquareCommunity, PreviewCommunity
 
 _global_broker = None
 
@@ -41,9 +41,12 @@ class QtGlobalEventBroker:
     def __init__(self):
         self.qt = QtGlobalEventBrokerWrapped()
 
-    def newSquareCreated(self, square):
-        self.qt.newSquareCreated.emit(square)
+    #TODO: use __gettattr__ for this.
+    def newCommunityCreated(self, square):
+        self.qt.newCommunityCreated.emit(square)
+    def newPreviewCommunityCreated(self, square):
+        self.qt.newPreviewCommunityCreated.emit(square)
 
 class QtGlobalEventBrokerWrapped(QObject):
-    newSquareCreated = pyqtSignal(SquareCommunity)
-
+    newCommunityCreated = pyqtSignal(SquareCommunity)
+    newPreviewCommunityCreated = pyqtSignal(PreviewCommunity)
