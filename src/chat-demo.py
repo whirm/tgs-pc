@@ -8,6 +8,7 @@ import sys
 
 from discovery.community import DiscoveryCommunity
 from square.community import PreviewCommunity, SquareCommunity
+import events
 
 from dispersy.callback import Callback
 from dispersy.dispersy import Dispersy
@@ -32,16 +33,20 @@ from threading import Lock
 #Local
 from widgets import ChatMessageListItem, MainWin
 
+#Set up QT as event broker
+events.setEventBrokerFactory(events.qt.createEventBroker)
+global_events = events.qt.createEventBroker(None)
+
 #Die with ^C
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+
 class ChatCore:
     def __init__(self):
         self.nick = "Anon"
-        self.message_references=[]
-
-        self.setup_lock=Lock()
+        self.message_references = []
+        self._communities = []
 
     def dispersy(self, callback):
         # start Dispersy
@@ -67,13 +72,11 @@ class ChatCore:
         dispersy.define_auto_load(PreviewCommunity, (self._discovery,))
         dispersy.define_auto_load(SquareCommunity, (self._discovery,))
 
-        self.community = community
-        self.setup_lock.release()
-
         # load squares
         for master in SquareCommunity.get_master_members():
             yield 1.0
-            dispersy.get_community(master.mid)
+            community = dispersy.get_community(master.mid)
+            self._communities.append(community)
 
     def DEBUG_SIMULATION(self):
         yield 5.0
@@ -133,8 +136,11 @@ class ChatCore:
         else:
             print "Not sending empty message."
 
+    def onNewSquareCreated(self, square):
+        #TODO: We need to update the squares list here.
+        print "NEW SQUAREEE!!!!1!1!1!!", square
+
     def _setupThreads(self):
-        self.setup_lock.acquire()
 
         # start threads
         callback = Callback()
@@ -146,13 +152,6 @@ class ChatCore:
 
         #pyside:
         #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
-
-        #Wait for the Dispersy thread to instance the Community class so we can connect to its signals
-        self.setup_lock.acquire()
-        self.community.textMessageReceived.connect(self.onTextMessageReceived)
-        self.setup_lock.release()
-        #It won't be used again:
-        del self.setup_lock
 
     def _stopThreads(self):
         self.callback.stop()
@@ -175,6 +174,7 @@ class ChatCore:
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
+        global_events.qt.newSquareCreated.connect(self.onNewSquareCreated)
 
         #Setup dispersy threads
         self._setupThreads()
