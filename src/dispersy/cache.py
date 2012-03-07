@@ -56,12 +56,6 @@ class CacheDict(object):
         else:
             return value
 
-    def __iter__(self):
-        """
-        Iterate though the cache ordered by higher poke counts first
-        """
-        return (key for key, _ in sorted(self._dict.iteritems(), key=lambda (_, cache): cache.__poke_count, reverse=True))
-
     def cleanup(self):
         """
         Yields a list of (key, Cache) tuples that are removed from the cache.
@@ -91,8 +85,8 @@ class CacheDict(object):
                             return
 
                 # yield all caches that have not yet expired (based on poke ordering)
-                for poke_count, key, cache in sorted(caches):
-                    if poke_count > 0:
+                caches = [(key, cache) for poke_count, key, cache in caches if poke_count > 0]
+                for key, cache in sorted(caches):
                         self._dict.__delitem__(key)
                         yield key, cache
 

@@ -875,21 +875,9 @@ class Dispersy(Singleton):
             packet, = self._database.execute(u"SELECT packet FROM sync WHERE community = ? AND member = ? AND global_time = ?",
                                              (community.database_id, member.database_id, global_time)).next()
         except StopIteration:
-            pass
+            return None
         else:
-            return self.convert_packet_to_message(str(packet), community)
-        return None
-
-    def get_last_message(self, meta, community, member, minimal_global_time=0):
-        try:
-            global_time, packet = self._database.execute(u"SELECT global_time, packet FROM sync WHERE meta_message = ? AND member = ? ORDER BY global_time DESC LIMIT 1",
-                                                         (meta.database_id, member.database_id)).next()
-        except StopIteration:
-            pass
-        else:
-            if minimal_global_time <= global_time:
-                return self.convert_packet_to_message(str(packet), community)
-        return None
+            return community.get_conversion(packet[:22]).decode_message(LoopbackCandidate(), packet)
 
     def wan_address_vote(self, address, voter):
         """
@@ -2882,14 +2870,14 @@ class Dispersy(Singleton):
             assert isinstance(candidate, Candidate)
             assert isinstance(member, Member)
             assert isinstance(global_time, (int, long))
-            assert response_func is None or callable(response_func)
+            assert callable(response_func)
             assert isinstance(response_args, tuple)
             assert isinstance(timeout, float)
             assert timeout > 0.0
             assert isinstance(forward, bool)
 
         meta = community.get_meta_message(u"dispersy-missing-message")
-        request = meta.impl(distribution=(meta.community.global_time,), destination=(candidate,), payload=(member, [global_time]))
+        request = meta.impl(distribution=(meta.community.global_time,), destination=(candidate,), payload=(member, global_time))
 
         if response_func:
             # generate footprint
