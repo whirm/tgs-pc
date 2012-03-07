@@ -875,21 +875,18 @@ class Dispersy(Singleton):
             packet, = self._database.execute(u"SELECT packet FROM sync WHERE community = ? AND member = ? AND global_time = ?",
                                              (community.database_id, member.database_id, global_time)).next()
         except StopIteration:
-            pass
+            return None
         else:
             return self.convert_packet_to_message(str(packet), community)
-        return None
 
-    def get_last_message(self, meta, community, member, minimal_global_time=0):
+    def get_last_message(self, community, member, meta):
         try:
-            global_time, packet = self._database.execute(u"SELECT global_time, packet FROM sync WHERE meta_message = ? AND member = ? ORDER BY global_time DESC LIMIT 1",
-                                                         (meta.database_id, member.database_id)).next()
+            packet, = self._database.execute(u"SELECT packet FROM sync WHERE member = ? AND meta_message = ? ORDER BY global_time DESC LIMIT 1",
+                                             (member.database_id, meta.database_id)).next()
         except StopIteration:
-            pass
+            return None
         else:
-            if minimal_global_time <= global_time:
-                return self.convert_packet_to_message(str(packet), community)
-        return None
+            return self.convert_packet_to_message(str(packet), community)
 
     def wan_address_vote(self, address, voter):
         """
@@ -3120,7 +3117,7 @@ class Dispersy(Singleton):
             assert isinstance(candidate, Candidate)
             assert isinstance(dummy_member, DummyMember)
             assert not dummy_member.public_key
-            assert callable(response_func)
+            assert response_func is None or callable(response_func)
             assert isinstance(response_args, tuple)
             assert isinstance(timeout, float)
             assert timeout > 0.0
