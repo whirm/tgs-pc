@@ -31,7 +31,7 @@ from PyQt4 import QtGui, QtCore
 from threading import Lock
 
 #Local
-from widgets import ChatMessageListItem, MainWin
+from widgets import ChatMessageListItem, MainWin, SquareOverviewListItem
 
 #Set up QT as event broker
 events.setEventBrokerFactory(events.qt.createEventBroker)
@@ -138,13 +138,13 @@ class ChatCore:
 
     def onNewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
-        print "NEW SQUAREEE!!!!1!1!1!!", square
-        self.mainwin.squares_list.addItem(square.title)
+        print "New square created", square
+        SquareOverviewListItem(parent=self.mainwin.squares_list, name=square.title)
 
     def onNewPreviewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
-        print "NEW Suggested SQUAREEE!!!!1!1!1!!", square
-        self.mainwin.suggested_squares_list.addItem(square.title)
+        print "New suggested square created", square
+        SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, name=square.title)
 
     def _setupThreads(self):
 
