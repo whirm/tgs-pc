@@ -102,8 +102,8 @@ class Conversion(BinaryConversion):
         if len(data) < offset + 2:
             raise DropPacket("Insufficient packet size")
         member_info_global_time, text_length = unpack_from("!QH", data, offset)
-        member_info = self._community.dispersy.get_last_message(self._community.get_meta_message(u"member-info"), self._community, placeholder.authentication.member, member_info_global_time)
-        if not member_info:
+        member_info = self._community.dispersy.get_last_message(self._community.get_meta_message(u"member-info"), self._community, placeholder.authentication.member)
+        if not (member_info and member_info_global_time < member_info.distribution.global_time):
             # TODO implement DelayPacketByMissingLastMessage
             raise DelayPacketByMissingMessage(self._community, placeholder.authentication.member, [member_info_global_time])
         if not text_length < 1024:
