@@ -1,13 +1,14 @@
 
-from state import DummyState, UnknownState, SquareState, TaskGroupState
 from conversion import Conversion
 from payload import MemberInfoPayload, SquareInfoPayload, TextPayload
+from state import DummyState, UnknownState, SquareState, TaskGroupState
 
 from dispersy.authentication import MemberAuthentication
 from dispersy.community import Community
 from dispersy.conversion import DefaultConversion
 from dispersy.destination import CommunityDestination
 from dispersy.distribution import FullSyncDistribution, LastSyncDistribution
+from dispersy.member import DummyMember
 from dispersy.message import Message
 from dispersy.resolution import DynamicResolution, PublicResolution, LinearResolution
 
@@ -22,7 +23,7 @@ class SquareBase(Community):
 
         self._discovery = discovery
         self._my_member_info = self._dispersy.get_last_message(self._meta_messages[u"member-info"], self, self._my_member)
-
+        
         # if self._my_member_info is None:
         #     def dummy_member_info():
         #         if self._my_member_info is None:
@@ -195,7 +196,7 @@ class SquareBase(Community):
 
     def post_text(self, text, media_hash):
         if self._my_member_info is None:
-            raise ValueError("invalid my member info, set_member_info must be called at least once before posting")
+            raise ValueError("invalid my member info, set_my_member_info must be called at least once before posting")
         if not (isinstance(text, unicode) and len(text.encode("UTF-8")) < 1024):
             raise ValueError("invalid text")
         if not (isinstance(media_hash, str) and len(media_hash) in (0, 20)):
@@ -226,22 +227,22 @@ class SquareBase(Community):
 
     def fetch_hot_text(self, hot):
         members = self.get_members_from_id(hot.mid)
-        if not members:
-            # TODO I believe that there is such a method in the new dispersy release
-            self._dispersy.create_missing_member()
-            return
+        if members:
+            for member in members:
+                message = self._dispersy.get_message(self, member, hot.global_time)
+                if message:
+                    return message
+                else:
+                    candidate = hot.sources.pop(0)
+                    self._dispersy.create_missing_message(self, candidate, member, hot.global_time)
 
-        for member in members:
-            message = self._dispersy.get_message(self, member, hot.global_time)
-            if message:
-                return message
-            else:
-                candidate = hot.sources.pop(0)
-                self._dispersy.create_missing_message(self, candidate, member, hot.global_time)
+        else:
+            self._dispersy.create_missing_identity(self, hot.sources[0], DummyMember(hot.mid))
 
 class SquareCommunity(SquareBase):
     def __init__(self, *argv, **kwargs):
         super(SquareCommunity, self).__init__(*argv, **kwargs)
+
         #Notify about new square creation
         self.global_events.newCommunityCreated(self)
 
