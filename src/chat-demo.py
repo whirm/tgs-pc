@@ -152,15 +152,28 @@ class ChatCore:
         #TODO: Set thumbnail info (setting an empty string ATM)
         self.callback.register(square.set_my_member_info, (self.nick,''))
 
-        list_item=SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
+        list_item = SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
         self._communities[square.cid]=square
+
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
     def onNewPreviewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
         print "New suggested square created", square
-        SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, square=square)
+        list_item = SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, square=square)
+
+        #TODO: refactor this to have a common method for new squares
+        square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
+        square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
+        #TODO: put the hot communities here instead:
+        #214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
+        #214701    +whirm  ok, noted
+        #214727  eknutson  so, I can translate the files in src/ui to be Android XML.. ok
+        #214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
+
+    def onJoinPreviewCommunity(self):
+        print "Joining a new community!"
 
     def _setupThreads(self):
 
@@ -192,10 +205,10 @@ class ChatCore:
         self.app = QtGui.QApplication(sys.argv)
         self.mainwin = MainWin()
         self.mainwin.show()
-        #ui.nick_line.returnPressed.connect(on_nick_changed)
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
+        self.mainwin.join_btn.clicked.connect(self.onJoinPreviewCommunity)
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
         global_events.qt.newPreviewCommunityCreated.connect(self.onNewPreviewCommunityCreated)
 

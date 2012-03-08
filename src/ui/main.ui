@@ -182,7 +182,7 @@
                <enum>QAbstractItemView::NoDragDrop</enum>
               </property>
               <property name="selectionMode">
-               <enum>QAbstractItemView::NoSelection</enum>
+               <enum>QAbstractItemView::SingleSelection</enum>
               </property>
               <property name="verticalScrollMode">
                <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -201,6 +201,13 @@
               </property>
               <property name="wordWrap">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="join_btn">
+              <property name="text">
+               <string>Join selected square</string>
               </property>
              </widget>
             </item>
