@@ -116,7 +116,6 @@ class ChatCore:
             self.mainwin.message_list.takeItem(0)
 
     def onNickChanged(self, *argv, **kwargs):
-        #Yeah, its a little bit weird, but pyqt doens't offer a nicer way to do it AFAIK...
         nick = self.mainwin.nick_line.text()
         print "Nick changed to:", nick
         if nick and nick != self.nick:
