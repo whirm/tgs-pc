@@ -103,7 +103,7 @@ class ChatCore:
             self._discovery.keyword_search([u"SIM", u"%d" % index])
 
     def onTextMessageReceived(self, message):
-        ChatMessageListItem(parent=self.mainwin.message_list, nick="TODO :D", body=message.text)
+        ChatMessageListItem(parent=self.mainwin.message_list, nick=message.payload.member_info.payload.alias, body=message.payload.text)
         #TODO: Obtain member_info data.
         #TODO: Obtain media associated with message.media_hash and put it in the message.
         #TODO: Obtain media associated with message.member_info.thumbnail_hash and update the avatar.

@@ -152,7 +152,9 @@ class SquareBase(Community):
         return self._my_member_info
 
     def on_member_info(self, messages):
-        pass
+        for message in messages:
+            self.events.memberInfoUpdated(message)
+        # update GUI: member info has changed
 
     def undo_member_info(self, *args):
         pass
@@ -217,7 +219,7 @@ class SquareBase(Community):
             pass
             # TODO store in local chat log database
             # update GUI: message has been received
-            self.events.messageReceived(message.payload)
+            self.events.messageReceived(message)
 
     def undo_text(self, *args):
         pass
