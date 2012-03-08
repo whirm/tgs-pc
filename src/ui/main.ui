@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>377</width>
-    <height>380</height>
+    <width>469</width>
+    <height>572</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,11 +86,17 @@
               <property name="showDropIndicator" stdset="0">
                <bool>false</bool>
               </property>
+              <property name="dragEnabled">
+               <bool>false</bool>
+              </property>
+              <property name="dragDropOverwriteMode">
+               <bool>false</bool>
+              </property>
               <property name="dragDropMode">
-               <enum>QAbstractItemView::DragOnly</enum>
+               <enum>QAbstractItemView::NoDragDrop</enum>
               </property>
               <property name="selectionMode">
-               <enum>QAbstractItemView::NoSelection</enum>
+               <enum>QAbstractItemView::SingleSelection</enum>
               </property>
               <property name="verticalScrollMode">
                <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -173,7 +179,7 @@
                <bool>false</bool>
               </property>
               <property name="dragDropMode">
-               <enum>QAbstractItemView::DragOnly</enum>
+               <enum>QAbstractItemView::NoDragDrop</enum>
               </property>
               <property name="selectionMode">
                <enum>QAbstractItemView::NoSelection</enum>
@@ -233,7 +239,7 @@
         <bool>false</bool>
        </property>
        <property name="dragDropMode">
-        <enum>QAbstractItemView::DragOnly</enum>
+        <enum>QAbstractItemView::NoDragDrop</enum>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::NoSelection</enum>
