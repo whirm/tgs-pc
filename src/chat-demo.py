@@ -48,7 +48,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 class ChatCore:
     def __init__(self):
-        self.nick = "Anon"
+        self.nick = u"Anon"
         self.message_references = []
         self._communities = {}
 
@@ -107,7 +107,6 @@ class ChatCore:
 
     def onTextMessageReceived(self, message):
         ChatMessageListItem(parent=self.mainwin.message_list, nick=message.payload.member_info.payload.alias, body=message.payload.text)
-        #TODO: Obtain member_info data.
         #TODO: Obtain media associated with message.media_hash and put it in the message.
         #TODO: Obtain media associated with message.member_info.thumbnail_hash and update the avatar.
 
@@ -127,18 +126,32 @@ class ChatCore:
             print "Same or empty nick, doing nothing"
 
     def onMessageReadyToSend(self):
-        message = unicode(self.mainwin.message_line.text())
+        message = self.mainwin.message_line.text()
         if message:
             print "Sending message: ", message
-            self.callback.register(self.community.sendMessage, (message,))
-            self.mainwin.message_line.clear()
+            #See what community is currently selected
+            current_item = self.mainwin.squares_list.currentItem()
+            if type(current_item) is SquareOverviewListItem:
+                square = current_item.square
+                #TODO: Add media_hash support, empty string ATM.
+                self.callback.register(square.post_text, (message, ''))
+                self.mainwin.message_line.clear()
+            else:
+                msg_box = QtGui.QMessageBox()
+                msg_box.setText("Please, select which square you want to send the message from the the top-left list first.")
+                msg_box.exec_()
         else:
-            print "Not sending empty message."
+            print "I categorically refuse to send an empty message."
 
     def onNewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
         print "New square created", square
         #TODO: We will switch to an MVC widget soon, so we can sort, filter, update, etc easily.
+
+        #Set the member info stuff for this community
+        #TODO: Set thumbnail info (setting an empty string ATM)
+        self.callback.register(square.set_my_member_info, (self.nick,''))
+
         list_item=SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
         self._communities[square.cid]=square
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
