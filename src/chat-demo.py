@@ -46,7 +46,7 @@ class ChatCore:
     def __init__(self):
         self.nick = "Anon"
         self.message_references = []
-        self._communities = []
+        self._communities = {}
 
     def dispersy(self, callback):
         # start Dispersy
@@ -76,7 +76,7 @@ class ChatCore:
         for master in SquareCommunity.get_master_members():
             yield 1.0
             community = dispersy.get_community(master.mid)
-            self._communities.append(community)
+            self._communities[community.cid]=community
 
     def DEBUG_SIMULATION(self):
         yield 5.0
@@ -102,18 +102,12 @@ class ChatCore:
             # user clicked the 'search' button
             self._discovery.keyword_search([u"SIM", u"%d" % index])
 
-    def onTextMessageReceived(self, text):
-        #TODO: Temporary hack until we use the new chat message:
-        try:
-            nick, body = text.split(' writes ', 1)
-        except ValueError:
-            try:
-                nick, body = text.split(': ', 1)
-            except ValueError:
-                nick = 'NONICK'
-                body = text
+    def onTextMessageReceived(self, message):
+        ChatMessageListItem(parent=self.mainwin.message_list, nick="TODO :D", body=message.text)
+        #TODO: Obtain member_info data.
+        #TODO: Obtain media associated with message.media_hash and put it in the message.
+        #TODO: Obtain media associated with message.member_info.thumbnail_hash and update the avatar.
 
-        ChatMessageListItem(parent=self.mainwin.message_list, nick=nick, body=body)
         while self.mainwin.message_list.count() > 250:
             print "Deleting A chat message"
             self.mainwin.message_list.takeItem(0)
@@ -139,12 +133,16 @@ class ChatCore:
     def onNewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
         print "New square created", square
-        SquareOverviewListItem(parent=self.mainwin.squares_list, name=square.title)
+        #TODO: We will switch to an MVC widget soon, so we can sort, filter, update, etc easily.
+        list_item=SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
+        self._communities[square.cid]=list_item
+        square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
+        square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
     def onNewPreviewCommunityCreated(self, square):
         #TODO: We need to update the squares list here.
         print "New suggested square created", square
-        SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, name=square.title)
+        SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, square=square)
 
     def _setupThreads(self):
 
