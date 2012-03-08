@@ -194,8 +194,8 @@ class SquareBase(Community):
         pass
 
     def post_text(self, text, media_hash):
-        if self._my_member is None:
-            raise ValueError("invalid my member info")
+        if self._my_member_info is None:
+            raise ValueError("invalid my member info, set_member_info must be called at least once before posting")
         if not (isinstance(text, unicode) and len(text.encode("UTF-8")) < 1024):
             raise ValueError("invalid text")
         if not (isinstance(media_hash, str) and len(media_hash) in (0, 20)):

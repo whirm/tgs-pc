@@ -65,11 +65,11 @@ class TextPayload(Payload):
         def __init__(self, meta, member_info, text, media_hash):
             if __debug__:
                 from dispersy.message import Message
-            assert isinstance(member_info, Message.Implementation)
-            assert isinstance(text, unicode)
-            assert len(text.encode("UTF-8")) < 1024
-            assert isinstance(media_hash, str)
-            assert media_hash == "" or len(media_hash) == 20
+            assert isinstance(member_info, Message.Implementation), member_info
+            assert isinstance(text, unicode), text
+            assert len(text.encode("UTF-8")) < 1024, text
+            assert isinstance(media_hash, str), media_hash
+            assert media_hash == "" or len(media_hash) == 20, media_hash
             super(TextPayload.Implementation, self).__init__(meta)
             self._member_info = member_info
             self._text = text
