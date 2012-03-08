@@ -2,6 +2,10 @@
 # -*- conding: utf8 -*-
 # tar cvjf chat-demo.tar.bz2 chat-demo --exclude ".svn" --exclude "*pyc" --exclude "*~" --exclude ".backup"
 
+#Disable QString compatibility
+import sip
+sip.setapi('QString', 2)
+
 import communication
 import time
 import sys
@@ -76,7 +80,6 @@ class ChatCore:
         for master in SquareCommunity.get_master_members():
             yield 1.0
             community = dispersy.get_community(master.mid)
-            self._communities[community.cid]=community
 
     def DEBUG_SIMULATION(self):
         yield 5.0
@@ -113,10 +116,13 @@ class ChatCore:
             self.mainwin.message_list.takeItem(0)
 
     def onNickChanged(self, *argv, **kwargs):
+        #Yeah, its a little bit weird, but pyqt doens't offer a nicer way to do it AFAIK...
         nick = self.mainwin.nick_line.text()
         print "Nick changed to:", nick
         if nick and nick != self.nick:
-            self.callback.register(self.community.setNick, (nick,))
+            for community in self._communities.itervalues():
+                #TODO: Set thumbnail info (setting an empty string ATM)
+                self.callback.register(community.set_my_member_info, (nick,''))
             self.nick = nick
         else:
             print "Same or empty nick, doing nothing"
@@ -135,7 +141,7 @@ class ChatCore:
         print "New square created", square
         #TODO: We will switch to an MVC widget soon, so we can sort, filter, update, etc easily.
         list_item=SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
-        self._communities[square.cid]=list_item
+        self._communities[square.cid]=square
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
