@@ -402,7 +402,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
+         <item row="1" column="3">
           <spacer name="horizontalSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -414,6 +414,35 @@
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="0" column="2" rowspan="2">
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="title">
+            <string>Tools</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="0">
+             <widget class="QPushButton" name="createSquare_btn">
+              <property name="text">
+               <string>Create new square</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
          </item>
         </layout>
        </item>
@@ -435,6 +464,19 @@
              <string>Show square window</string>
             </property>
            </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>
@@ -513,12 +555,12 @@
    <slot>setFocus()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>189</x>
-     <y>193</y>
+     <x>389</x>
+     <y>202</y>
     </hint>
     <hint type="destinationlabel">
-     <x>136</x>
-     <y>337</y>
+     <x>237</x>
+     <y>558</y>
     </hint>
    </hints>
   </connection>
@@ -529,12 +571,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>36</x>
-     <y>336</y>
+     <x>39</x>
+     <y>561</y>
     </hint>
     <hint type="destinationlabel">
-     <x>43</x>
-     <y>314</y>
+     <x>52</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>

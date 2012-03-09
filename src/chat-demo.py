@@ -35,7 +35,7 @@ from PyQt4 import QtGui, QtCore
 from threading import Lock
 
 #Local
-from widgets import ChatMessageListItem, MainWin, SquareOverviewListItem
+from widgets import ChatMessageListItem, MainWin, SquareOverviewListItem, SquareEditDialog
 
 #Set up QT as event broker
 events.setEventBrokerFactory(events.qt.createEventBroker)
@@ -85,16 +85,16 @@ class ChatCore:
         yield 5.0
 
         # user clicked the 'create new square' button
-        community = SquareCommunity.create_community(self._my_member, self._discovery)
-        yield 1.0
+        #community = SquareCommunity.create_community(self._my_member, self._discovery)
+        #yield 1.0
 
         # user clicked the 'update my member info' button
-        community.set_my_member_info(u"SIM nickname", "")
-        yield 1.0
+        #community.set_my_member_info(u"SIM nickname", "")
+        #yield 1.0
 
         # user clicked the 'update square info' button
-        community.set_square_info(u"SIM title", u"SIM description", "", (0, 0), 0)
-        yield 1.0
+        #community.set_square_info(u"SIM title", u"SIM description", "", (0, 0), 0)
+        #yield 1.0
 
         #for index in xrange(5):
         #    # user clicked the 'post message' button
@@ -138,7 +138,7 @@ class ChatCore:
                 self.mainwin.message_line.clear()
             else:
                 msg_box = QtGui.QMessageBox()
-                msg_box.setText("Please, select which square you want to send the message from the the top-left list first.")
+                msg_box.setText("Please, select to which square you want to send the message from the the top-left list first.")
                 msg_box.exec_()
         else:
             print "I categorically refuse to send an empty message."
@@ -202,6 +202,27 @@ class ChatCore:
             msg_box.setText("Please, select which square you want to leave from the top-left list first.")
             msg_box.exec_()
 
+    def onCreateSquareBtnPushed(self):
+        self.mainwin.createSquare_btn.setEnabled(False)
+        self._square_edit_dialog = SquareEditDialog()
+        self._square_edit_dialog.squareInfoReady.connect(self.onSquareCreateDialogFinished)
+        self._square_edit_dialog.show()
+
+    def onSquareCreateDialogFinished(self):
+
+        square_info = self._square_edit_dialog.getSquareInfo()
+
+        self.callback.register(self._dispersyCreateCommunity, square_info)
+
+        self._square_edit_dialog = None
+        self.mainwin.createSquare_btn.setEnabled(True)
+
+    def _dispersyCreateCommunity(self, title, description, avatar, lat, lon, radius):
+        community = SquareCommunity.create_community(self._my_member, self._discovery)
+
+        #TODO: Publish the avatar via swift and set the avatar's hash here
+        community.set_square_info(title, description, '', (int(lat*10**6), int(lon*10**6)), radius)
+
     def _setupThreads(self):
 
         # start threads
@@ -231,18 +252,24 @@ class ChatCore:
         #Setup QT main window
         self.app = QtGui.QApplication(sys.argv)
         self.mainwin = MainWin()
-        self.mainwin.show()
+
+        #Connect main window signals
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
         self.mainwin.join_square_btn.clicked.connect(self.onJoinPreviewCommunity)
         self.mainwin.leave_square_btn.clicked.connect(self.onLeaveCommunity)
+        self.mainwin.createSquare_btn.clicked.connect(self.onCreateSquareBtnPushed)
+
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
-        global_events.qt.newPreviewCommunityCreated.connect(self.onNewPreviewCommunityCreated)
+        global_events.qt.newPreviewCommunityCreated.connect(
+                                                self.onNewPreviewCommunityCreated)
 
         #Setup dispersy threads
         self._setupThreads()
 
+        #Show the main window
+        self.mainwin.show()
         #Start QT's event loop
         self.app.exec_()
 
