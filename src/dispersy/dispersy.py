@@ -389,7 +389,7 @@ class Dispersy(Singleton):
         for counter in count(1):
             yield 1.0 if counter < 30 else 30.0
             if __debug__: dprint("attempt #", counter, level="warning")
-            addresses = get_bootstrap_addresses()
+            addresses = get_bootstrap_addresses(self._working_directory)
             for address in addresses:
                 if address is None:
                     break
@@ -871,6 +871,12 @@ class Dispersy(Singleton):
 
         Returns None if this message is not in the local database.
         """
+        if __debug__:
+            # pylint: disable-msg=W0404
+            from community import Community
+        assert isinstance(community, Community)
+        assert isinstance(member, Member)
+        assert isinstance(global_time, (int, long))
         try:
             packet, = self._database.execute(u"SELECT packet FROM sync WHERE community = ? AND member = ? AND global_time = ?",
                                              (community.database_id, member.database_id, global_time)).next()
@@ -880,6 +886,12 @@ class Dispersy(Singleton):
             return self.convert_packet_to_message(str(packet), community)
 
     def get_last_message(self, community, member, meta):
+        if __debug__:
+            # pylint: disable-msg=W0404
+            from community import Community
+        assert isinstance(community, Community)
+        assert isinstance(member, Member)
+        assert isinstance(meta, Message)
         try:
             packet, = self._database.execute(u"SELECT packet FROM sync WHERE member = ? AND meta_message = ? ORDER BY global_time DESC LIMIT 1",
                                              (member.database_id, meta.database_id)).next()
@@ -4421,9 +4433,9 @@ class Dispersy(Singleton):
             assert community.dispersy_enable_candidate_walker_responses
             community.dispersy_take_step()
 
-            # delay will never be less than 0.05, hence we can accommodate 100 communities
-            # before the interval between each step becomes larger than 5.0 seconds
-            delay = max(0.05, 5.0 / len(walker_communities))
+            # delay will never be less than 0.1, hence we can accommodate 50 communities before the
+            # interval between each step becomes larger than 5.0 seconds
+            delay = max(0.1, 5.0 / len(walker_communities))
             if __debug__: dprint("there are ", len(walker_communities), " walker enabled communities.  pausing ", delay, "s between each step")
 
             desync = (yield delay)
