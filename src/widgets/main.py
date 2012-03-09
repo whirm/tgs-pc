@@ -5,8 +5,6 @@ import communication
 import time
 import sys
 
-from community.community import ChatCommunity
-
 from dispersy.callback import Callback
 from dispersy.dispersy import Dispersy
 from dispersy.member import Member
