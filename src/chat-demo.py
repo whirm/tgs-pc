@@ -96,10 +96,10 @@ class ChatCore:
         community.set_square_info(u"SIM title", u"SIM description", "", (0, 0), 0)
         yield 1.0
 
-        for index in xrange(5):
-            # user clicked the 'post message' button
-            community.post_text(u"SIM message %d" % index, "")
-            yield 1.0
+        #for index in xrange(5):
+        #    # user clicked the 'post message' button
+        #    community.post_text(u"SIM message %d" % index, "")
+        #    yield 1.0
 
         for index in xrange(5):
             # user clicked the 'search' button
