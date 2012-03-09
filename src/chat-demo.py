@@ -129,7 +129,7 @@ class ChatCore:
         message = self.mainwin.message_line.text()
         if message:
             print "Sending message: ", message
-            #See what community is currently selected
+            #Get currently selected community
             current_item = self.mainwin.squares_list.currentItem()
             if type(current_item) is SquareOverviewListItem:
                 square = current_item.square
@@ -166,14 +166,41 @@ class ChatCore:
         #TODO: refactor this to have a common method for new squares
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
-        #TODO: put the hot communities here instead:
+        #TODO: put the hot communities here instead when the search squares dialog is in a working condition:
         #214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
         #214701    +whirm  ok, noted
-        #214727  eknutson  so, I can translate the files in src/ui to be Android XML.. ok
         #214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
 
     def onJoinPreviewCommunity(self):
+        #TODO: disable the leave/join buttons if no square is selected
         print "Joining a new community!"
+        #Get currently selected community
+        current_item = self.mainwin.suggested_squares_list.currentItem()
+        if type(current_item) is SquareOverviewListItem:
+            square = current_item.square
+            self.callback.register(square.join_square)
+            row = self.mainwin.suggested_squares_list.currentRow()
+            self.mainwin.suggested_squares_list.takeItem(row)
+        else:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setText("Please, select which square you want to join from the bottom-left list first.")
+            msg_box.exec_()
+
+    def onLeaveCommunity(self):
+        print "leaving community!"
+        #Get currently selected community
+        current_item = self.mainwin.squares_list.currentItem()
+        if type(current_item) is SquareOverviewListItem:
+            square = current_item.square
+            self.callback.register(square.leave_square)
+            row = self.mainwin.squares_list.currentRow()
+            self.mainwin.squares_list.takeItem(row)
+            #Remove the square reference from the squares list
+            self._communities.pop(current_item.square.cid)
+        else:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setText("Please, select which square you want to leave from the top-left list first.")
+            msg_box.exec_()
 
     def _setupThreads(self):
 
@@ -208,7 +235,8 @@ class ChatCore:
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
-        self.mainwin.join_btn.clicked.connect(self.onJoinPreviewCommunity)
+        self.mainwin.join_square_btn.clicked.connect(self.onJoinPreviewCommunity)
+        self.mainwin.leave_square_btn.clicked.connect(self.onLeaveCommunity)
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
         global_events.qt.newPreviewCommunityCreated.connect(self.onNewPreviewCommunityCreated)
 

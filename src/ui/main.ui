@@ -93,7 +93,7 @@
                <bool>false</bool>
               </property>
               <property name="dragDropMode">
-               <enum>QAbstractItemView::NoDragDrop</enum>
+               <enum>QAbstractItemView::DragOnly</enum>
               </property>
               <property name="selectionMode">
                <enum>QAbstractItemView::SingleSelection</enum>
@@ -130,6 +130,13 @@
             <property name="sizeConstraint">
              <enum>QLayout::SetMaximumSize</enum>
             </property>
+            <item>
+             <widget class="QPushButton" name="leave_square_btn">
+              <property name="text">
+               <string>Leave selected square</string>
+              </property>
+             </widget>
+            </item>
             <item>
              <widget class="QLabel" name="label_5">
               <property name="sizePolicy">
@@ -179,7 +186,7 @@
                <bool>false</bool>
               </property>
               <property name="dragDropMode">
-               <enum>QAbstractItemView::NoDragDrop</enum>
+               <enum>QAbstractItemView::DragOnly</enum>
               </property>
               <property name="selectionMode">
                <enum>QAbstractItemView::SingleSelection</enum>
@@ -205,7 +212,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="join_btn">
+             <widget class="QPushButton" name="join_square_btn">
               <property name="text">
                <string>Join selected square</string>
               </property>
@@ -246,7 +253,7 @@
         <bool>false</bool>
        </property>
        <property name="dragDropMode">
-        <enum>QAbstractItemView::NoDragDrop</enum>
+        <enum>QAbstractItemView::DragOnly</enum>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::NoSelection</enum>

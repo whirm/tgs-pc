@@ -123,18 +123,6 @@ class SquareBase(Community):
         self._dispersy.create_dynamic_settings(self, policies)
         self._dispersy.reclassify_community(self, TaskGroup)
 
-    def convert_to_square(self):
-        # TODO this check should be done in dispersy.py
-        meta = self._meta_messages[u"dispersy-dynamic-settings"]
-        if not self._timeline.allowed(meta, self.global_time + 1)[0]:
-            raise ValueError("not allowed")
-        policies = []
-        for name in [u"member-info", u"square-info", u"text"]:
-            meta = self._meta_messages[name]
-            policies.append((meta, meta.resolution.policies[0]))
-        self._dispersy.create_dynamic_settings(self, policies)
-        self._dispersy.reclassify_community(self, Square)
-
     def set_my_member_info(self, name, thumbnail_hash):
         if not (isinstance(name, unicode) and len(name.encode("UTF-8")) < 256):
             raise ValueError("invalid name")
@@ -246,6 +234,9 @@ class SquareCommunity(SquareBase):
         #Notify about new square creation
         self.global_events.newCommunityCreated(self)
 
+    def leave_square(self):
+        return self._dispersy.reclassify_community(self, PreviewCommunity)
+
 class PreviewCommunity(SquareBase):
     def __init__(self, *argv, **kwargs):
         super(PreviewCommunity, self).__init__(*argv, **kwargs)
@@ -254,6 +245,9 @@ class PreviewCommunity(SquareBase):
 
     def on_text(self, messages, mark_as_hot=False):
         return super(PreviewCommunity, self).on_text(messages, mark_as_hot=mark_as_hot)
+
+    def join_square(self):
+        return self._dispersy.reclassify_community(self, SquareCommunity)
 
     # @property
     # def dispersy_acceptable_global_time_range(self):
