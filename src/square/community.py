@@ -22,7 +22,7 @@ class SquareBase(Community):
         super(SquareBase, self).__init__(master)
 
         self._discovery = discovery
-        self._my_member_info = self._dispersy.get_last_message(self._meta_messages[u"member-info"], self, self._my_member)
+        self._my_member_info = self._dispersy.get_last_message(self, self._my_member, self._meta_messages[u"member-info"])
         
         # if self._my_member_info is None:
         #     def dummy_member_info():
@@ -205,7 +205,6 @@ class SquareBase(Community):
         self._discovery.add_implicitly_hot_text(messages)
 
         for message in messages:
-            pass
             # TODO store in local chat log database
             # update GUI: message has been received
             self.events.messageReceived(message)
