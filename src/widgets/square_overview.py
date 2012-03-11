@@ -3,7 +3,7 @@
 
 #QT
 from PyQt4.QtGui import QWidget, QPixmap, QListWidgetItem
-from PyQt4.QtCore import QSize
+from PyQt4.QtCore import QSize, Qt
 
 #Python builtin
 from time import strftime, localtime
@@ -21,6 +21,9 @@ class SquareOverviewListItem(QListWidgetItem):
         self.square = square
         self.widget = SquareOverviewWidget(title=square.title, *argv, **kwargs)
         self.setSizeHint(self.widget.minimumSizeHint())
+
+        self.setFlags(Qt.ItemFlags(Qt.ItemIsSelectable + Qt.ItemIsEnabled))
+
         parent.addItem(self)
         parent.setItemWidget(self, self.widget)
 

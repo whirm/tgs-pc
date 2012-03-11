@@ -51,6 +51,7 @@ class ChatCore:
         self.nick = u"Anon"
         self.message_references = []
         self._communities = {}
+        self._communities_listwidgets = {}
 
     def dispersy(self, callback):
         # start Dispersy
@@ -106,6 +107,7 @@ class ChatCore:
             self._discovery.keyword_search([u"SIM", u"%d" % index])
 
     def onTextMessageReceived(self, message):
+        #Put the message in the overview list
         ChatMessageListItem(parent=self.mainwin.message_list, nick=message.payload.member_info.payload.alias, body=message.payload.text)
         #TODO: Obtain media associated with message.media_hash and put it in the message.
         #TODO: Obtain media associated with message.member_info.thumbnail_hash and update the avatar.
@@ -113,6 +115,10 @@ class ChatCore:
         while self.mainwin.message_list.count() > 250:
             print "Deleting A chat message"
             self.mainwin.message_list.takeItem(0)
+
+        #Put the message in the square specific list
+        square_list_widget = self._communities_listwidgets[message.community.cid]
+        ChatMessageListItem(parent=square_list_widget, nick=message.payload.member_info.payload.alias, body=message.payload.text)
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
@@ -130,7 +136,7 @@ class ChatCore:
         if message:
             print "Sending message: ", message
             #Get currently selected community
-            current_item = self.mainwin.squares_list.currentItem()
+            current_item = self.mainwin.squares_list.selectedItems()[0]
             if type(current_item) is SquareOverviewListItem:
                 square = current_item.square
                 #TODO: Add media_hash support, empty string ATM.
@@ -153,6 +159,16 @@ class ChatCore:
         self.callback.register(square.set_my_member_info, (self.nick,''))
 
         list_item = SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
+        item_index = self.mainwin.squares_list.row(list_item)
+        #Create this square's messages list
+        list_widget = QtGui.QListWidget()
+        self.mainwin.messages_stack.insertWidget(item_index, list_widget)
+        self.mainwin.messages_stack.setCurrentIndex(item_index)
+
+        list_item.setSelected(True)
+
+        self._communities_listwidgets[square.cid]=list_widget
+
         self._communities[square.cid]=square
 
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
