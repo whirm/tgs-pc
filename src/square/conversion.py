@@ -94,14 +94,15 @@ class Conversion(BinaryConversion):
 
     def _encode_text(self, message):
         member_info_global_time = message.payload.member_info.distribution.global_time
+        utc_timestamp = message.payload.utc_timestamp
         text = message.payload.text.encode("UTF-8")
         media_hash = message.payload.media_hash or "\x00" * 20
-        return pack("!QH", member_info_global_time, min(len(text), 1024-1)), text[:1024], media_hash
+        return pack("!QqH", member_info_global_time, utc_timestamp, min(len(text), 1024-1)), text[:1024], media_hash
 
     def _decode_text(self, placeholder, offset, data):
-        if len(data) < offset + 2:
+        if len(data) < offset + 18:
             raise DropPacket("Insufficient packet size")
-        member_info_global_time, text_length = unpack_from("!QH", data, offset)
+        member_info_global_time, utc_timestamp, text_length = unpack_from("!QqH", data, offset)
         member_info = self._community.dispersy.get_last_message(self._community, placeholder.authentication.member, self._community.get_meta_message(u"member-info"))
         if not (member_info and member_info_global_time < member_info.distribution.global_time):
             # TODO implement DelayPacketByMissingLastMessage
@@ -125,5 +126,5 @@ class Conversion(BinaryConversion):
             media_hash = ""
         offset += 20
 
-        return offset, placeholder.meta.payload.implement(member_info, text, media_hash)
+        return offset, placeholder.meta.payload.implement(member_info, text, media_hash, utc_timestamp)
 

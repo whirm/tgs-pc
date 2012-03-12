@@ -1,3 +1,5 @@
+from time import time
+from datetime import datetime
 from dispersy.payload import Payload
 
 class MemberInfoPayload(Payload):
@@ -62,7 +64,7 @@ class SquareInfoPayload(Payload):
 
 class TextPayload(Payload):
     class Implementation(Payload.Implementation):
-        def __init__(self, meta, member_info, text, media_hash):
+        def __init__(self, meta, member_info, text, media_hash, utc_timestamp):
             if __debug__:
                 from dispersy.message import Message
             assert isinstance(member_info, Message.Implementation), member_info
@@ -70,10 +72,12 @@ class TextPayload(Payload):
             assert len(text.encode("UTF-8")) < 1024, text
             assert isinstance(media_hash, str), media_hash
             assert media_hash == "" or len(media_hash) == 20, media_hash
+            assert (isinstance(utc_timestamp, str) and utc_timestamp == "now") or isinstance(utc_timestamp, long)
             super(TextPayload.Implementation, self).__init__(meta)
             self._member_info = member_info
             self._text = text
             self._media_hash = media_hash
+            self._utc_timestamp = long(time()) if utc_timestamp == "now" else long(utc_timestamp)
 
         @property
         def member_info(self):
@@ -86,3 +90,11 @@ class TextPayload(Payload):
         @property
         def media_hash(self):
             return self._media_hash
+
+        @property
+        def utc_timestamp(self):
+            return self._utc_timestamp
+
+        @property
+        def datetime(self):
+            return datetime.fromtimestamp(self._utc_timestamp)

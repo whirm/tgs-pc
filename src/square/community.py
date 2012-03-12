@@ -1,4 +1,3 @@
-
 from conversion import Conversion
 from payload import MemberInfoPayload, SquareInfoPayload, TextPayload
 from state import DummyState, UnknownState, SquareState, TaskGroupState
@@ -23,7 +22,7 @@ class SquareBase(Community):
 
         self._discovery = discovery
         self._my_member_info = self._dispersy.get_last_message(self, self._my_member, self._meta_messages[u"member-info"])
-        
+
         # if self._my_member_info is None:
         #     def dummy_member_info():
         #         if self._my_member_info is None:
@@ -197,7 +196,7 @@ class SquareBase(Community):
         message = meta.impl(authentication=(self._my_member,),
                             resolution=(policy.implement(),),
                             distribution=(self.claim_global_time(),),
-                            payload=(self._my_member_info, text, media_hash))
+                            payload=(self._my_member_info, text, media_hash, "now"))
         self._dispersy.store_update_forward([message], True, True, True)
         return message
 
