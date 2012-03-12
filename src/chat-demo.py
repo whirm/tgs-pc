@@ -108,9 +108,7 @@ class ChatCore:
 
     def onTextMessageReceived(self, message):
         #Put the message in the overview list
-        ChatMessageListItem(parent=self.mainwin.message_list, nick=message.payload.member_info.payload.alias, body=message.payload.text)
-        #TODO: Obtain media associated with message.media_hash and put it in the message.
-        #TODO: Obtain media associated with message.member_info.thumbnail_hash and update the avatar.
+        ChatMessageListItem(parent=self.mainwin.message_list, message=message)
 
         while self.mainwin.message_list.count() > 250:
             print "Deleting A chat message"
@@ -118,7 +116,7 @@ class ChatCore:
 
         #Put the message in the square specific list
         square_list_widget = self._communities_listwidgets[message.community.cid]
-        ChatMessageListItem(parent=square_list_widget, nick=message.payload.member_info.payload.alias, body=message.payload.text)
+        ChatMessageListItem(parent=square_list_widget, message=message)
 
     def onNickChanged(self, *argv, **kwargs):
         nick = self.mainwin.nick_line.text()
@@ -162,6 +160,11 @@ class ChatCore:
         item_index = self.mainwin.squares_list.row(list_item)
         #Create this square's messages list
         list_widget = QtGui.QListWidget()
+
+        #Scroll to bottom at each new message insertion
+        message_model = list_widget.model()
+        message_model.rowsInserted.connect(list_widget.scrollToBottom)
+
         self.mainwin.messages_stack.insertWidget(item_index, list_widget)
         self.mainwin.messages_stack.setCurrentIndex(item_index)
 

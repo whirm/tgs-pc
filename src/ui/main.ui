@@ -295,11 +295,6 @@
            <property name="wordWrap">
             <bool>true</bool>
            </property>
-           <item>
-            <property name="text">
-             <string>Welcome to TGS Chat Demo!</string>
-            </property>
-           </item>
           </widget>
          </item>
         </layout>
