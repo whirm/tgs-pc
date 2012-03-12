@@ -107,9 +107,10 @@ class Conversion(BinaryConversion):
         if not (member_info and member_info_global_time < member_info.distribution.global_time):
             # TODO implement DelayPacketByMissingLastMessage
             raise DelayPacketByMissingMessage(self._community, placeholder.authentication.member, [member_info_global_time])
+        utc_timestamp = long(utc_timestamp)
         if not text_length < 1024:
             raise DropPacket("invalid text_length")
-        offset += 10
+        offset += 18
 
         if len(data) < offset + text_length:
             raise DropPacket("Insufficient packet size")
