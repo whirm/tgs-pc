@@ -212,7 +212,7 @@ class SquareBase(Community):
         pass
 
     def fetch_hot_text(self, hot):
-        members = self.get_members_from_id(hot.mid)
+        members = self._dispersy.get_members_from_id(hot.mid)
         if members:
             for member in members:
                 message = self._dispersy.get_message(self, member, hot.global_time)
