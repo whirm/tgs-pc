@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="main">
+    <file>edit-find.png</file>
     <file>face-smile-big.png</file>
     <file>configure.png</file>
   </qresource>

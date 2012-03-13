@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SquareDialog</class>
- <widget class="QDialog" name="SquareDialog">
+ <class>SquareSearchDialog</class>
+ <widget class="QDialog" name="SquareSearchDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -36,14 +36,7 @@
           <enum>QLayout::SetMaximumSize</enum>
          </property>
          <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Filter:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="lineEdit_2">
+          <widget class="QLineEdit" name="search_line">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -64,80 +57,17 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="search_btn">
+           <property name="text">
+            <string>Search</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
-        <widget class="QTreeWidget" name="treeWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>282</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <property name="indentation">
-          <number>11</number>
-         </property>
-         <property name="rootIsDecorated">
-          <bool>true</bool>
-         </property>
-         <attribute name="headerVisible">
-          <bool>false</bool>
-         </attribute>
-         <column>
-          <property name="text">
-           <string>location</string>
-          </property>
-         </column>
-         <item>
-          <property name="text">
-           <string>Elbonia</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>Dummy Squarepants nananan lalalal</string>
-           </property>
-          </item>
-         </item>
-         <item>
-          <property name="text">
-           <string>Foonia</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>asdfasdf</string>
-           </property>
-          </item>
-         </item>
-         <item>
-          <property name="text">
-           <string>Barnia</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>asdfasdfad</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>asdfasdfasdff</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>gfgga</string>
-           </property>
-          </item>
-         </item>
-        </widget>
+        <widget class="QListWidget" name="results_list"/>
        </item>
       </layout>
      </widget>

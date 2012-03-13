@@ -20,8 +20,6 @@ except (ImportError):
 
 from PyQt4 import QtGui, QtCore
 
-from widgets import SquareDialog
-
 __all__=['MainWin',]
 
 class MainWin(QtGui.QMainWindow, Ui_TheGlobalSquare):
@@ -30,15 +28,8 @@ class MainWin(QtGui.QMainWindow, Ui_TheGlobalSquare):
         #super(Ui_MainWindow, self).__init__(*argv, **kwargs)
         self.setupUi(self)
 
-        #We want the message list to scroll to the bottom every time we send or receive a new message.
+        #We want the overview message list to scroll to the bottom every time we send or receive a new message.
         message_model = self.message_list.model()
         message_model.rowsInserted.connect(self.message_list.scrollToBottom)
 
-        #Debug/demo stuff we will remove as functionality is implemented:
-        self.showSquare_btn.clicked.connect(self.onDemoShowSquare)
-
-    def onDemoShowSquare(self):
-        #Keep a reference to it so it doesn't get destroyed
-        self.square_dialog = SquareDialog()
-        self.square_dialog.show()
 

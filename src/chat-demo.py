@@ -23,7 +23,6 @@ from dispersy.crypto import (ec_generate_key,
 
 try:
     from ui.main import Ui_TheGlobalSquare
-    from ui.square import Ui_SquareDialog
 except (ImportError):
     print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
     sys.exit()
@@ -35,7 +34,7 @@ from PyQt4 import QtGui, QtCore
 from threading import Lock
 
 #Local
-from widgets import ChatMessageListItem, MainWin, SquareOverviewListItem, SquareEditDialog
+from widgets import ChatMessageListItem, MainWin, SquareOverviewListItem, SquareEditDialog, SquareSearchDialog
 
 #Set up QT as event broker
 events.setEventBrokerFactory(events.qt.createEventBroker)
@@ -45,6 +44,10 @@ global_events = events.qt.createEventBroker(None)
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+#TODO: Implement the hot communities list:
+#214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
+#214701    +whirm  ok, noted
+#214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
 
 class ChatCore:
     def __init__(self):
@@ -52,6 +55,7 @@ class ChatCore:
         self.message_references = []
         self._communities = {}
         self._communities_listwidgets = {}
+        self._square_search_dialog = None
 
     def dispersy(self, callback):
         # start Dispersy
@@ -102,6 +106,7 @@ class ChatCore:
         #    community.post_text(u"SIM message %d" % index, "")
         #    yield 1.0
 
+        self._discovery.keyword_search([u"test",])
         for index in xrange(5):
             # user clicked the 'search' button
             self._discovery.keyword_search([u"SIM", u"%d" % index])
@@ -161,6 +166,23 @@ class ChatCore:
         #Create this square's messages list
         list_widget = QtGui.QListWidget()
 
+        #Setup widget properties
+        list_widget.setFrameShape(QtGui.QFrame.NoFrame)
+        list_widget.setFrameShadow(QtGui.QFrame.Plain)
+        list_widget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        list_widget.setAutoScroll(True)
+        list_widget.setAutoScrollMargin(2)
+        list_widget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        list_widget.setProperty("showDropIndicator", False)
+        list_widget.setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+        list_widget.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
+        list_widget.setVerticalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
+        list_widget.setHorizontalScrollMode(QtGui.QAbstractItemView.ScrollPerPixel)
+        list_widget.setMovement(QtGui.QListView.Snap)
+        list_widget.setProperty("isWrapping", False)
+        list_widget.setSpacing(2)
+        list_widget.setWordWrap(True)
+
         #Scroll to bottom at each new message insertion
         message_model = list_widget.model()
         message_model.rowsInserted.connect(list_widget.scrollToBottom)
@@ -174,21 +196,20 @@ class ChatCore:
 
         self._communities[square.cid]=square
 
+        #TODO: Put this on the widget constructor, and remove it from here and onNewPreviewCommunityCreated
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
     def onNewPreviewCommunityCreated(self, square):
-        #TODO: We need to update the squares list here.
         print "New suggested square created", square
-        list_item = SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, square=square)
+        if self._square_search_dialog:
+            list_item = SquareOverviewListItem(parent=self._square_search_dialog.results_list, square=square)
 
-        #TODO: refactor this to have a common method for new squares
-        square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
-        square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
-        #TODO: put the hot communities here instead when the search squares dialog is in a working condition:
-        #214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
-        #214701    +whirm  ok, noted
-        #214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
+            #TODO: Put this on the widget constructor and remove it from here and onNewCommunityCreated
+            square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
+            square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
+        else:
+            print "But the search window doesn't exist, dropping it..."
 
     def onJoinPreviewCommunity(self):
         #TODO: disable the leave/join buttons if no square is selected
@@ -236,6 +257,20 @@ class ChatCore:
         self._square_edit_dialog = None
         self.mainwin.createSquare_btn.setEnabled(True)
 
+    def onSearchSquareClicked(self):
+        self.mainwin.search_square_btn.setEnabled(False)
+        self._square_search_dialog = SquareSearchDialog()
+        self._square_search_dialog.rejected.connect(self.onSquareSearchDialogClosed)
+        self._square_search_dialog.onSearchRequested.connect(self.startNewSearch)
+        self._square_search_dialog.show()
+
+    def onSquareSearchDialogClosed(self):
+        self.mainwin.search_square_btn.setEnabled(True)
+
+    def startNewSearch(self, search_terms):
+        print "Searching for:", search_terms
+        self.callback.register(self._discovery.keyword_search, (search_terms,))
+
     def _dispersyCreateCommunity(self, title, description, avatar, lat, lon, radius):
         community = SquareCommunity.create_community(self._my_member, self._discovery)
 
@@ -276,10 +311,15 @@ class ChatCore:
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
+        self.mainwin.message_send_btn.clicked.connect(
+                                                self.onMessageReadyToSend)
         self.mainwin.join_square_btn.clicked.connect(self.onJoinPreviewCommunity)
         self.mainwin.leave_square_btn.clicked.connect(self.onLeaveCommunity)
         self.mainwin.createSquare_btn.clicked.connect(self.onCreateSquareBtnPushed)
 
+        self.mainwin.search_square_btn.clicked.connect(self.onSearchSquareClicked)
+
+        #Connect global events
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
         global_events.qt.newPreviewCommunityCreated.connect(
                                                 self.onNewPreviewCommunityCreated)
