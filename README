@@ -46,3 +46,16 @@ Extract from a chat with eviy:
 
 193516     +eviy  dispersy is from the QLectives project.  soon there will be a new deliverable document that is much more up to date
 193531     +eviy  but it hasn't been released yet :(
+
+
+#About crypto keys:
+175753  +eviy  whirm: you can run 'python dispersy/crypto.py' to create fresh public/private pairs
+175851  +eviy  whirm: you copy the public key (they are HEX encoded) and put it in ChatCore.dispersy
+175904  +eviy  whirm: replace 'public_key = "3081a7301006072a8648ce3d020...' with the new key
+
+
+##############################
+# Notes about the icons used #
+##############################
+
+The icons used in this app are copied from the Oxygen's KDE icon set (www.kde.org, www.oxygen-icons.org)
