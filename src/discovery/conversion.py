@@ -10,6 +10,8 @@ class Conversion(BinaryConversion):
         super(Conversion, self).__init__(community, "\x01")
         self.define_meta_message(chr(1), community.get_meta_message(u"hots"), self._encode_hots, self._decode_hots)
         self.define_meta_message(chr(2), community.get_meta_message(u"search"), self._encode_search, self._decode_search)
+        # TODO the search-response should include a response identifier
+        self.define_meta_message(chr(3), community.get_meta_message(u"search-response"), self._encode_hots, self._decode_hots)
 
 
     def _encode_hots(self, message):
@@ -50,4 +52,3 @@ class Conversion(BinaryConversion):
         offset += expression_length
 
         return offset, placeholder.meta.payload.implement(expression)
-        

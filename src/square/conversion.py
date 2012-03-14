@@ -8,7 +8,7 @@ class Conversion(BinaryConversion):
         super(Conversion, self).__init__(community, "\x01")
         self.define_meta_message(chr(2), community.get_meta_message(u"member-info"), self._encode_member_info, self._decode_member_info)
         self.define_meta_message(chr(3), community.get_meta_message(u"square-info"), self._encode_square_info, self._decode_square_info)
-        self.define_meta_message(chr(4), community.get_meta_message(u"text"), self._encode_text, self._decode_text)
+        self.define_meta_message(chr(5), community.get_meta_message(u"text"), self._encode_text, self._decode_text)
 
     def _encode_member_info(self, message):
         alias = message.payload.alias.encode("UTF-8")
@@ -97,7 +97,7 @@ class Conversion(BinaryConversion):
         utc_timestamp = message.payload.utc_timestamp
         text = message.payload.text.encode("UTF-8")
         media_hash = message.payload.media_hash or "\x00" * 20
-        return pack("!QqH", member_info_global_time, utc_timestamp, min(len(text), 1024-1)), text[:1024], media_hash
+        return pack("!QqH", member_info_global_time, utc_timestamp, min(len(text), 1024-1)), text[:1024-1], media_hash
 
     def _decode_text(self, placeholder, offset, data):
         if len(data) < offset + 18:

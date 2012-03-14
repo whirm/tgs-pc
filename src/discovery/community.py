@@ -34,7 +34,8 @@ class DiscoveryCommunity(Community):
 
     def initiate_meta_messages(self):
         return [Message(self, u"hots", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=5), HotsPayload(), self._dispersy._generic_timeline_check, self.on_hots),
-                Message(self, u"search", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchPayload(), self._dispersy._generic_timeline_check, self.on_search)]
+                Message(self, u"search", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchPayload(), self._dispersy._generic_timeline_check, self.on_search),
+                Message(self, u"search-response", NoAuthentication(), PublicResolution(), DirectDistribution(), CandidateDestination(), SearchResponsePayload(), self._dispersy._generic_timeline_check, self.on_search_response)]
 
     def initiate_conversions(self):
         return [DefaultConversion(self), Conversion(self)]
@@ -138,16 +139,29 @@ class DiscoveryCommunity(Community):
         if len(self._top_squares) + len(self._top_text) < 10:
             self._collect_top_hots()
 
-    def keyword_search(self, keywords):
-        return self.expression_search(u"|".join(keywords))
-            
-    def expression_search(self, expression):
+    def keyword_search(self, keywords, response_func, response_args=(), timeout=10.0):
+        return self.expression_search(u"|".join(keywords), response_func, response_args, timeout)
+
+    def expression_search(self, expression, response_func, response_args=(), timeout=10.0):
         meta = self._meta_messages[u"search"]
         message = meta.impl(distribution=(self.global_time,), payload=(expression,))
         self._dispersy.store_update_forward([message], False, False, True)
+
+        meta = self._meta_messages[u"search-response"]
+        self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout)
+
         return message
 
     def on_search(self, messages):
+        meta = self._meta_messages[u"search-response"]
         for message in messages:
             if __debug__: dprint("searching for \\", message.payload.expression, "\\")
-            # TODO
+
+            # TODO currently always responding with whats hot
+            if self._implicitly_hot_text:
+                hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in self._implicitly_hot_text[:10]]
+                response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(hots,))
+                self._dispersy.store_update_forward([response], False, False, True)
+
+    def on_search_response(self, messages):
+        pass
