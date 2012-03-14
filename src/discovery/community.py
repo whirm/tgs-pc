@@ -148,7 +148,7 @@ class DiscoveryCommunity(Community):
         self._dispersy.store_update_forward([message], False, False, True)
 
         meta = self._meta_messages[u"search-response"]
-        self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout)
+        self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_respnses=999)
 
         return message
 
