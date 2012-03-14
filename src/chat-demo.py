@@ -106,10 +106,18 @@ class ChatCore:
         #    community.post_text(u"SIM message %d" % index, "")
         #    yield 1.0
 
-        self._discovery.keyword_search([u"test",])
+        def response_func(message):
+            if message:
+                # received message.payload.hots
+                pass
+            else:
+                # received timeout, will occur for each search unless 999 responses are received
+                pass
+
+        self._discovery.keyword_search([u"test",], response_func)
         for index in xrange(5):
             # user clicked the 'search' button
-            self._discovery.keyword_search([u"SIM", u"%d" % index])
+            self._discovery.keyword_search([u"SIM", u"%d" % index], response_func)
 
     def onTextMessageReceived(self, message):
         #Put the message in the overview list

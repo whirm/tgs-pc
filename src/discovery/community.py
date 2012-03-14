@@ -2,7 +2,7 @@ from random import sample
 from time import time
 
 from conversion import Conversion
-from payload import HotsPayload, SearchPayload
+from payload import HotsPayload, SearchPayload, SearchResponsePayload
 from hot import Hot, HotCache
 
 from square.community import PreviewCommunity
@@ -12,7 +12,7 @@ from dispersy.cache import CacheDict
 from dispersy.authentication import NoAuthentication
 from dispersy.community import Community
 from dispersy.conversion import DefaultConversion
-from dispersy.destination import CommunityDestination
+from dispersy.destination import CommunityDestination, CandidateDestination
 from dispersy.distribution import DirectDistribution
 from dispersy.message import Message
 from dispersy.resolution import PublicResolution
@@ -148,7 +148,7 @@ class DiscoveryCommunity(Community):
         self._dispersy.store_update_forward([message], False, False, True)
 
         meta = self._meta_messages[u"search-response"]
-        self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_respnses=999)
+        self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=999)
 
         return message
 
