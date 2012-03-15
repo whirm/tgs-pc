@@ -118,6 +118,7 @@ class ChatCore:
         for index in xrange(5):
             # user clicked the 'search' button
             self._discovery.keyword_search([u"SIM", u"%d" % index], response_func)
+            yield 1.0
 
     def onTextMessageReceived(self, message):
         #Put the message in the overview list

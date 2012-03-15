@@ -161,7 +161,8 @@ class DiscoveryCommunity(Community):
 
             # TODO currently always responding with whats hot
             if self._implicitly_hot_text:
-                hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in self._implicitly_hot_text[:10]]
+                hots = [Hot(message.community.cid, msg.authentication.member.mid, msg.distribution.global_time) for msg in self._implicitly_hot_text[:10]]
+
                 response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(hots,))
                 self._dispersy.store_update_forward([response], False, False, True)
 

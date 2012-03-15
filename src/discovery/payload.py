@@ -25,7 +25,7 @@ class SearchPayload(Payload):
 class SearchResponsePayload(Payload):
     class Implementation(Payload.Implementation):
         def __init__(self, meta, hots):
-            super(HotsPayload.Implementation, self).__init__(meta)
+            super(SearchResponsePayload.Implementation, self).__init__(meta)
             self._hots = hots
 
         @property
