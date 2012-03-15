@@ -33,9 +33,9 @@ class CandidateDestination(Destination):
             """
             if __debug__:
                 from candidate import Candidate
-            assert isinstance(candidates, tuple), candidates
-            assert len(candidates) >= 0, candidates
-            assert all(isinstance(candidate, Candidate) for candidate in candidates), candidates
+            assert isinstance(candidates, tuple)
+            assert len(candidates) >= 0
+            assert all(isinstance(candidate, Candidate) for candidate in candidates)
             super(CandidateDestination.Implementation, self).__init__(meta)
             self._candidates = candidates
 
