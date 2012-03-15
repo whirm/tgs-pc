@@ -108,16 +108,15 @@ class ChatCore:
 
         def response_func(message):
             if message:
-                # received message.payload.hots
-                pass
+                dprint("received ", len(message.payload.hots), " hot messages")
             else:
-                # received timeout, will occur for each search unless 999 responses are received
-                pass
+                dprint("received timeout, will occur for each search unless 999 responses are received")
 
         self._discovery.keyword_search([u"test",], response_func)
-        for index in xrange(5):
+        for index in xrange(999999):
             # user clicked the 'search' button
             self._discovery.keyword_search([u"SIM", u"%d" % index], response_func)
+            yield 1.0
 
     def onTextMessageReceived(self, message):
         #Put the message in the overview list

@@ -157,13 +157,15 @@ class DiscoveryCommunity(Community):
     def on_search(self, messages):
         meta = self._meta_messages[u"search-response"]
         for message in messages:
-            if __debug__: dprint("searching for \\", message.payload.expression, "\\")
+            if __debug__: dprint("searching \\", message.payload.expression, "\\ for ", message.candidate)
 
             # TODO currently always responding with whats hot
             if self._implicitly_hot_text:
-                hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in self._implicitly_hot_text[:10]]
+                hots = [Hot(message.community.cid, msg.authentication.member.mid, msg.distribution.global_time) for msg in self._implicitly_hot_text[:10]]
+
                 response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(hots,))
                 self._dispersy.store_update_forward([response], False, False, True)
+                if __debug__: dprint("responding with ", len(hots), " hot messages")
 
     def on_search_response(self, messages):
         pass
