@@ -277,7 +277,10 @@ class ChatCore:
 
     def startNewSearch(self, search_terms):
         print "Searching for:", search_terms
-        self.callback.register(self._discovery.keyword_search, (search_terms,))
+        self.callback.register(self._discovery.keyword_search, (search_terms, self._dispersy_onSearchResult))
+
+    def _dispersy_onSearchResult(self, result):
+        print "OnSearchResult", result
 
     def _dispersyCreateCommunity(self, title, description, avatar, lat, lon, radius):
         community = SquareCommunity.create_community(self._my_member, self._discovery)
