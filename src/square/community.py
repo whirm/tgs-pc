@@ -46,6 +46,14 @@ class SquareBase(Community):
         self.events = getEventBroker(self)
         self.global_events = getEventBroker(None)
 
+        def show_last_messages():
+            # TODO this is temp!
+            # cycle through most recent 10 text messages
+            packets = [str(packet) for packet, in self._dispersy.database.execute(u"SELECT packet FROM sync WHERE meta_message = ? ORDER BY global_time DESC LIMIT 10", (self._meta_messages[u"text"].database_id,))]
+            messages = self._dispersy.convert_packets_to_messages(reversed(packets), self)
+            self.on_text(messages)
+        self._dispersy.callback.register(show_last_messages, delay=1.0)
+
     def initiate_meta_messages(self):
         return [Message(self, u"member-info", MemberAuthentication(encoding="sha1"), DynamicResolution(PublicResolution(), LinearResolution()), LastSyncDistribution(synchronization_direction=u"ASC", priority=16, history_size=1), CommunityDestination(node_count=0), MemberInfoPayload(), self._dispersy._generic_timeline_check, self.on_member_info, self.undo_member_info),
                 Message(self, u"square-info", MemberAuthentication(encoding="sha1"), DynamicResolution(PublicResolution(), LinearResolution()), LastSyncDistribution(synchronization_direction=u"ASC", priority=128, history_size=1), CommunityDestination(node_count=10), SquareInfoPayload(), self._dispersy._generic_timeline_check, self.on_square_info, self.undo_square_info),

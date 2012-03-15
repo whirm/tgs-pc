@@ -145,10 +145,12 @@ class DiscoveryCommunity(Community):
     def expression_search(self, expression, response_func, response_args=(), timeout=10.0):
         meta = self._meta_messages[u"search"]
         message = meta.impl(distribution=(self.global_time,), payload=(expression,))
-        self._dispersy.store_update_forward([message], False, False, True)
-
-        meta = self._meta_messages[u"search-response"]
-        self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=999)
+        if self._dispersy.store_update_forward([message], False, False, True):
+            meta = self._meta_messages[u"search-response"]
+            self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=999)
+        else:
+            if __debug__: dprint("unable to search.  most likely there are no candidates", level="warning")
+            response_func(None, *response_args)
 
         return message
 
