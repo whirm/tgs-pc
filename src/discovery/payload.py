@@ -33,6 +33,7 @@ class SearchResponsePayload(Payload):
         def __init__(self, meta, identifier, hots):
             assert isinstance(identifier, int)
             super(SearchResponsePayload.Implementation, self).__init__(meta)
+            self._identifier = identifier
             self._hots = hots
 
         @property
