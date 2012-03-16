@@ -16,14 +16,16 @@ class RequestCache(object):
         self._callback_register = callback.register
         self._identifiers = set()
 
-    def claim(self, duration, cls):
+    def claim(self, duration, cls, *args, **kargs):
         assert isinstance(duration, float)
         assert issubclass(cls, Cache)
         while True:
             identifier = int(random() * 2**16)
             if not identifier in self._identifiers:
-                cache = cls(identifier)
+                cache = cls(identifier, *args, **kargs)
                 self._identifiers.add(cache)
                 self._callback_register(self._identifiers.remove, (cache,), delay=duration)
                 return cache
 
+    def get(self, identifier, default=None):
+        return self._identifiers.get(identifier, default)

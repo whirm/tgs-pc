@@ -219,19 +219,19 @@ class SquareBase(Community):
     def undo_text(self, *args):
         pass
 
-    def fetch_hot_text(self, hot):
-        members = self._dispersy.get_members_from_id(hot.mid)
+    def fetch_text(self, mid, global_time, candidates):
+        members = self._dispersy.get_members_from_id(mid)
         if members:
             for member in members:
-                message = self._dispersy.get_message(self, member, hot.global_time)
+                message = self._dispersy.get_message(self, member, global_time)
                 if message:
                     return message
                 else:
-                    candidate = hot.sources.pop(0)
-                    self._dispersy.create_missing_message(self, candidate, member, hot.global_time)
+                    candidate = candidates.pop(0)
+                    self._dispersy.create_missing_message(self, candidate, member, global_time)
 
         else:
-            self._dispersy.create_missing_identity(self, hot.sources[0], DummyMember(hot.mid))
+            self._dispersy.create_missing_identity(self, candidates[0], DummyMember(mid))
 
 class SquareCommunity(SquareBase):
     def __init__(self, *argv, **kwargs):

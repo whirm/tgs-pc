@@ -16,9 +16,40 @@ from dispersy.destination import CommunityDestination, CandidateDestination
 from dispersy.distribution import DirectDistribution
 from dispersy.message import Message
 from dispersy.resolution import PublicResolution
+from dispersy.requestcache import Cache
 
 if __debug__:
     from dispersy.dprint import dprint
+
+class SearchCache(Cache):
+    class Hit(object):
+        def __init__(self):
+            self.count = 0
+            self.sources = []
+            self.last_requested = 0.0
+            self.square = None
+            self.message = None
+
+    def __init__(self, identifier, expression, response_func, response_args):
+        super(SearchCache, self).__init__(identifier)
+        self._expression = expression
+        self._response_func = response_func
+        self._response_args = response_args
+        self._responses_received = 0
+        self._hits = {}
+
+    @property
+    def hits(self):
+        return self._hits
+
+    def add_hit(self, cid, mid, global_time, candidate):
+        key = (cid, mid, global_time)
+        hit = self._hits.get(key)
+        if not hit:
+            self._hits[key] = hit = self.Hit()
+        hit.count += 1
+        hit.sources.append(candidate)
+        self._responses_received += 1
 
 class DiscoveryCommunity(Community):
     def __init__(self, *args):
@@ -99,7 +130,7 @@ class DiscoveryCommunity(Community):
 
             if index < 10:
                 if not hot.message and hot.last_requested < now - 10.0 and hot.sources:
-                    hot.message = hot.square.fetch_hot_text(hot)
+                    hot.message = hot.square.fetch_text(hot.mid, hot.global_time, hot.sources)
 
                 if hot.message:
                     self._top_text.append(hot.message)
@@ -143,12 +174,11 @@ class DiscoveryCommunity(Community):
         return self.expression_search(u"|".join(keywords), response_func, response_args, timeout)
 
     def expression_search(self, expression, response_func, response_args=(), timeout=10.0):
+        cache = self._dispersy._request_cache.claim(timeout, SearchCache, expression, response_func, response_args)
+
         meta = self._meta_messages[u"search"]
-        message = meta.impl(distribution=(self.global_time,), payload=(expression,))
-        if self._dispersy.store_update_forward([message], False, False, True):
-            meta = self._meta_messages[u"search-response"]
-            self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=999)
-        else:
+        message = meta.impl(distribution=(self.global_time,), payload=(cache.identifier, expression))
+        if not self._dispersy.store_update_forward([message], False, False, True):
             if __debug__: dprint("unable to search.  most likely there are no candidates", level="warning")
             response_func(None, *response_args)
 
@@ -163,9 +193,32 @@ class DiscoveryCommunity(Community):
             if self._implicitly_hot_text:
                 hots = [Hot(message.community.cid, msg.authentication.member.mid, msg.distribution.global_time) for msg in self._implicitly_hot_text[:10]]
 
-                response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(hots,))
+                response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(message.payload.identifier, hots))
                 self._dispersy.store_update_forward([response], False, False, True)
                 if __debug__: dprint("responding with ", len(hots), " hot messages")
 
     def on_search_response(self, messages):
-        pass
+        updated_caches = set()
+        for message in messages:
+            cache = self._dispersy._request_cache.get(message.payload.identifier)
+            if cache:
+                updated_caches.add(cache)
+                for hot in message.payload.hots:
+                    cache.add_hit(hot.cid, hot.mid, hot.global_time, message.candidate)
+
+        # auto-join squares to retrieve results
+        for cache in updated_caches:
+            for (cid, mid, global_time), hit in cache.hits.iteritems():
+                if not hit.square:
+                    try:
+                        hit.square = self._dispersy.get_community(cid, load=True)
+                    except KeyError:
+                        master = DummyMember(cid)
+                        hit.square = PreviewCommunity.join_community(master, self._my_member, self)
+
+                if not hit.message and hit.last_requested < now - 10.0 and hit.sources:
+                    hit.message = hit.square.fetch_text(hit.mid, hit.global_time, hit.sources)
+
+                    if hit.message:
+                        if __debug__: dprint("received and verified \"", hit.message.payload.text, "\"")
+                        # TODO notify the GUI
