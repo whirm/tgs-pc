@@ -5,7 +5,7 @@ from conversion import Conversion
 from payload import HotsPayload, SearchPayload, SearchResponsePayload
 from hot import Hot, HotCache
 
-from square.community import PreviewCommunity
+from square.community import SquareBase, PreviewCommunity
 
 from dispersy.member import DummyMember
 from dispersy.cache import CacheDict
@@ -124,6 +124,11 @@ class DiscoveryCommunity(Community):
             if not hot.square:
                 try:
                     hot.square = self._dispersy.get_community(hot.cid, load=True)
+                    if not isinstance(hot.square, SquareBase):
+                        # TODO do this better
+                        if __debug__: dprint("hit in invalid community")
+                        hot.square = None
+                        continue
                 except KeyError:
                     master = DummyMember(hot.cid)
                     hot.square = PreviewCommunity.join_community(master, self._my_member, self)
@@ -153,22 +158,23 @@ class DiscoveryCommunity(Community):
             self._collect_top_hots()
 
     def on_hots(self, messages):
-        for message in messages:
-            for hot in message.payload.hots:
-                key = hot.key
+        pass
+        # for message in messages:
+        #     for hot in message.payload.hots:
+        #         key = hot.key
 
-                # 'upgrade' Hot to HotCache, also modifies importance counters in CacheDict
-                if key in self._hots:
-                    hot = self._hots[key]
-                else:
-                    self._hots[key] = hot = HotCache(hot)
-                assert isinstance(hot, HotCache), hot
-                assert isinstance(self._hots[key], HotCache), self._hots[key]
+        #         # 'upgrade' Hot to HotCache, also modifies importance counters in CacheDict
+        #         if key in self._hots:
+        #             hot = self._hots[key]
+        #         else:
+        #             self._hots[key] = hot = HotCache(hot)
+        #         assert isinstance(hot, HotCache), hot
+        #         assert isinstance(self._hots[key], HotCache), self._hots[key]
 
-                hot.add_source(message.candidate)
+        #         hot.add_source(message.candidate)
 
-        if len(self._top_squares) + len(self._top_text) < 10:
-            self._collect_top_hots()
+        # if len(self._top_squares) + len(self._top_text) < 10:
+        #     self._collect_top_hots()
 
     def keyword_search(self, keywords, response_func, response_args=(), timeout=10.0):
         return self.expression_search(u"|".join(keywords), response_func, response_args, timeout)
@@ -191,7 +197,7 @@ class DiscoveryCommunity(Community):
 
             # TODO currently always responding with whats hot
             if self._implicitly_hot_text:
-                hots = [Hot(message.community.cid, msg.authentication.member.mid, msg.distribution.global_time) for msg in self._implicitly_hot_text[:10]]
+                hots = [Hot(msg.community.cid, msg.authentication.member.mid, msg.distribution.global_time) for msg in self._implicitly_hot_text[:10]]
 
                 response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(message.payload.identifier, hots))
                 self._dispersy.store_update_forward([response], False, False, True)
@@ -207,11 +213,17 @@ class DiscoveryCommunity(Community):
                     cache.add_hit(hot.cid, hot.mid, hot.global_time, message.candidate)
 
         # auto-join squares to retrieve results
+        now = time()
         for cache in updated_caches:
             for (cid, mid, global_time), hit in cache.hits.iteritems():
                 if not hit.square:
                     try:
                         hit.square = self._dispersy.get_community(cid, load=True)
+                        if not isinstance(hit.square, SquareBase):
+                            # TODO do this better
+                            if __debug__: dprint("hit in invalid community: ", hit.square)
+                            hit.square = None
+                            continue
                     except KeyError:
                         master = DummyMember(cid)
                         hit.square = PreviewCommunity.join_community(master, self._my_member, self)

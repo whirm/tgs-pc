@@ -4,9 +4,6 @@ class Cache(object):
     def __init__(self, identifier):
         self._identifier = identifier
 
-    def __hash__(self):
-        return self._identifier
-
     @property
     def identifier(self):
         return self._identifier
@@ -14,7 +11,7 @@ class Cache(object):
 class RequestCache(object):
     def __init__(self, callback):
         self._callback_register = callback.register
-        self._identifiers = set()
+        self._identifiers = dict()
 
     def claim(self, duration, cls, *args, **kargs):
         assert isinstance(duration, float)
@@ -22,9 +19,8 @@ class RequestCache(object):
         while True:
             identifier = int(random() * 2**16)
             if not identifier in self._identifiers:
-                cache = cls(identifier, *args, **kargs)
-                self._identifiers.add(cache)
-                self._callback_register(self._identifiers.remove, (cache,), delay=duration)
+                self._identifiers[identifier] = cache = cls(identifier, *args, **kargs)
+                self._callback_register(self._identifiers.pop, (cache,), delay=duration)
                 return cache
 
     def get(self, identifier, default=None):
