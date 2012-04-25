@@ -127,7 +127,7 @@ class ChatCore:
             self.mainwin.message_list.takeItem(0)
 
         #Put the message in the square specific list
-        square_list_widget = self._communities_listwidgets[message.community.cid]
+        square_list_widget = self._communities_listwidgets[message.square.cid]
         ChatMessageListItem(parent=square_list_widget, message=message)
 
     def onNickChanged(self, *argv, **kwargs):
@@ -166,7 +166,7 @@ class ChatCore:
 
         #Set the member info stuff for this community
         #TODO: Set thumbnail info (setting an empty string ATM)
-        self.callback.register(square.set_my_member_info, (self.nick,''))
+        # self.callback.register(square.set_my_member_info, (self.nick,''))
 
         list_item = SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
         item_index = self.mainwin.squares_list.row(list_item)

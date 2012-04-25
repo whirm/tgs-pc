@@ -1,4 +1,7 @@
+from os import path, makedirs
+
 from conversion import Conversion
+from database import SquareDatabase
 from payload import MemberInfoPayload, SquareInfoPayload, TextPayload
 from state import DummyState, UnknownState, SquareState, TaskGroupState
 
@@ -14,45 +17,85 @@ from dispersy.resolution import DynamicResolution, PublicResolution, LinearResol
 if __debug__:
     from dispersy.dprint import dprint
 
+class Member(object):
+    __slots__ = ["square", "id", "alias", "thumbnail_hash"]
+
+    def __init__(self, square, id_, alias, thumbnail_hash):
+        assert isinstance(square, SquareBase)
+        assert isinstance(id_, (int, long))
+        assert isinstance(alias, unicode)
+        assert isinstance(thumbnail_hash, str)
+        self.square = square
+        self.id = id_
+        self.alias = alias
+        self.thumbnail_hash = thumbnail_hash
+
+class Text(object):
+    __slots__ = ["square", "id", "global_time", "member", "text", "media_hash", "utc_timestamp"]
+
+    def __init__(self, square, id_, global_time, member, text, media_hash, utc_timestamp):
+        assert isinstance(square, SquareBase)
+        assert isinstance(id_, (int, long))
+        assert isinstance(global_time, (int, long))
+        assert isinstance(member, Member)
+        assert isinstance(text, unicode)
+        assert isinstance(media_hash, str)
+        assert isinstance(utc_timestamp, (int, long))
+        self.square = square
+        self.id = id_
+        self.global_time = global_time
+        self.member = member
+        self.text = text
+        self.media_hash = media_hash
+        self.utc_timestamp = utc_timestamp
+
+    def __str__(self):
+        return "<Text %d@%d %s>" % (self.id, self.global_time, self.text)
 
 class SquareBase(Community):
     def __init__(self, master, discovery):
         self._state = DummyState()
         super(SquareBase, self).__init__(master)
 
-        self._discovery = discovery
-        self._my_member_info = self._dispersy.get_last_message(self, self._my_member, self._meta_messages[u"member-info"])
+        self._database = SquareDatabase.has_instance()
+        if not self._database:
+            # our data storage
+            sqlite_directory = path.join(self._dispersy.working_directory, u"sqlite")
+            if not path.isdir(sqlite_directory):
+                makedirs(sqlite_directory)
 
-        # if self._my_member_info is None:
-        #     def dummy_member_info():
-        #         if self._my_member_info is None:
-        #             self.set_member_info(u"Anonymous", "")
-        #     self._dispersy.callback.register(dummy_member_info)
+            self._database = SquareDatabase.get_instance(sqlite_directory)
+            self._dispersy.database.attach_commit_callback(self._database.commit)
+
+        self._discovery = discovery
 
         try:
-            packet, = self._dispersy.database.execute(u"SELECT packet FROM sync WHERE meta_message = ? ORDER BY global_time DESC LIMIT 1", (self._meta_messages[u"square-info"].database_id,)).next()
+            self._update_global_time, self._title, self._description, thumbnail_hash = self._database.execute(u"SELECT global_time, title, description, thumbnail_hash FROM square WHERE id = ?", (self._database_id,)).next()
+            self._thumbnail_hash = str(thumbnail_hash)
         except StopIteration:
-            self._square_info = None
-        else:
-            self._square_info = self._dispersy.convert_packet_to_message(str(packet), self)
-            assert self._square_info.name == u"square-info"
+            self._update_global_time = 0
+            self._title = u""
+            self._description = u""
+            self._thumbnail_hash = ""
 
-        # if self._square_info is None:
-        #     def dummy_square_info():
-        #         if self._square_info is None:
-        #             self.set_square_info(u"Unknown", u"", "", (0, 0), 0)
-        #     self._dispersy.callback.register(dummy_square_info)
+        try:
+            self._my_alias, my_thumbnail_hash = self._database.execute(u"SELECT alias, thumbnail_hash FROM member WHERE id = ? AND square = ?", (self._my_member.database_id, self._database_id)).next()
+            self._my_thumbnail_hash = str(my_thumbnail_hash)
+        except StopIteration:
+            self._my_alias = u"Anonymous"
+            self._my_thumbnail_hash = ""
+
+        if __debug__: dprint("new Square '", self._title, "'.  using alias '", self._my_alias, "'")
 
         self.events = getEventBroker(self)
         self.global_events = getEventBroker(None)
 
-        def show_last_messages():
-            # TODO this is temp!
-            # cycle through most recent 10 text messages
-            packets = [str(packet) for packet, in self._dispersy.database.execute(u"SELECT packet FROM sync WHERE meta_message = ? ORDER BY global_time DESC LIMIT 10", (self._meta_messages[u"text"].database_id,))]
-            messages = self._dispersy.convert_packets_to_messages(reversed(packets), self)
-            self.on_text(messages)
-        self._dispersy.callback.register(show_last_messages, delay=1.0)
+        def load_history():
+            for id_, global_time, member_id, member_alias, member_thumbnail_hash, text, media_hash, utc_timestamp in self._database.execute(u"SELECT text.id, text.global_time, text.member, member.alias, member.thumbnail_hash, text.text, text.media_hash, text.utc_timestamp FROM text JOIN member ON member.id = text.member WHERE text.square = ? ORDER BY global_time, utc_timestamp DESC LIMIT 100", (self._database_id,)):
+                member = Member(self, member_id, member_alias, str(member_thumbnail_hash))
+                text = Text(self, id_, global_time, member, text, str(media_hash), utc_timestamp)
+                self.events.messageReceived(text)
+        self._dispersy.callback.register(load_history, delay=1.0)
 
     def initiate_meta_messages(self):
         return [Message(self, u"member-info", MemberAuthentication(encoding="sha1"), DynamicResolution(PublicResolution(), LinearResolution()), LastSyncDistribution(synchronization_direction=u"ASC", priority=16, history_size=1), CommunityDestination(node_count=0), MemberInfoPayload(), self._dispersy._generic_timeline_check, self.on_member_info, self.undo_member_info),
@@ -62,29 +105,25 @@ class SquareBase(Community):
     def initiate_conversions(self):
         return [DefaultConversion(self), Conversion(self)]
 
-    # @property
-    # def my_member_info(self):
-    #     return self._my_member_info.payload
-
     @property
     def title(self):
-        return u"Unknown" if self._square_info is None else self._square_info.payload.title
+        return self._title
 
     @property
     def description(self):
-        return u"Unknown" if self._square_info is None else self._square_info.payload.description
+        return self._description
 
     @property
     def thumbnail_hash(self):
-        return ""  if self._square_info is None else self._square_info.payload.thumbnail_hash
+        return self._thumbnail_hash
 
     @property
     def location(self):
-        return (0, 0) if self._square_info is None else self._square_info.payload.location
+        return (0, 0)
 
     @property
     def radius(self):
-        return 0 if self._square_info is None else self._square_info.payload.radius
+        return 0
 
     @property
     def allowed_to_set_member_info(self):
@@ -148,9 +187,20 @@ class SquareBase(Community):
         return self._my_member_info
 
     def on_member_info(self, messages):
+        data = []
         for message in messages:
-            self.events.memberInfoUpdated(message)
-        # update GUI: member info has changed
+            member = Member(self, message.authentication.member.database_id, message.payload.alias, message.payload.thumbnail_hash)
+
+            # database data
+            data.append((member.id, self._database_id, member.alias, buffer(member.thumbnail_hash)))
+
+            if member.id == self._my_member.database_id:
+                self._my_alias = member.alias
+                self._my_thumbnail_hash = member.thumbnail_hash
+
+            self.events.memberInfoUpdated(member)
+
+        self._database.executemany(u"INSERT OR REPLACE INTO member (id, square, alias, thumbnail_hash) VALUES (?, ?, ?, ?)", data)
 
     def undo_member_info(self, *args):
         pass
@@ -179,12 +229,20 @@ class SquareBase(Community):
         return message
 
     def on_square_info(self, messages):
-        # because LastSyncDistribution works per member we will need to keep the most recent
+        update = False
         for message in messages:
-            if self._square_info is None or (message.distribution.global_time > self._square_info.distribution.global_time and message.packet > self._square_info.packet):
-                self._square_info = message
-        # update GUI: square info has changed
-        self.events.squareInfoUpdated()
+            # because LastSyncDistribution works per member we will need to keep the most recent
+            if message.distribution.global_time > self._update_global_time:
+                self._update_global_time = message.distribution.global_time
+                self._title = message.payload.title
+                self._description = message.payload.description
+                self._thumbnail_hash = message.payload.thumbnail_hash
+                self._database.execute(u"INSERT OR REPLACE INTO square (id, global_time, title, description, thumbnail_hash) VALUES (?, ?, ?, ?, ?)", (self._database_id, self._update_global_time, self._title, self._description, buffer(self._thumbnail_hash)))
+                update = True
+
+        if update:
+            # update GUI: square info has changed
+            self.events.squareInfoUpdated()
 
     def undo_square_info(self, *args):
         pass
@@ -209,12 +267,21 @@ class SquareBase(Community):
         return message
 
     def on_text(self, messages, mark_as_hot=True):
-        self._discovery.add_implicitly_hot_text(messages)
-
+        data = []
         for message in messages:
-            # TODO store in local chat log database
+            member = Member(self, message.payload.member_info.authentication.member.database_id, message.payload.member_info.payload.alias, message.payload.member_info.payload.thumbnail_hash)
+            text = Text(self, message.packet_id, message.distribution.global_time, member, message.payload.text, message.payload.media_hash, message.payload.utc_timestamp)
+
+            # database data
+            data.append((text.id, text.global_time, self._database_id, member.id, text.text, buffer(text.media_hash), text.utc_timestamp))
+
             # update GUI: message has been received
-            self.events.messageReceived(message)
+            self.events.messageReceived(text)
+
+        self._database.executemany(u"INSERT INTO text (id, global_time, square, member, text, media_hash, utc_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)", data)
+
+        if mark_as_hot:
+            self._discovery.add_implicitly_hot_text(messages)
 
     def undo_text(self, *args):
         pass

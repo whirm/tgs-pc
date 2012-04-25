@@ -19,9 +19,9 @@ class ChatMessageListItem(QListWidgetItem):
         super(ChatMessageListItem, self).__init__(type=QListWidgetItem.UserType)
 
         self.message = message
-        nick = message.payload.member_info.payload.alias
-        body = message.payload.text
-        timestamp = message.payload.utc_timestamp
+        nick = message.member.alias
+        body = message.text
+        timestamp = message.utc_timestamp
 
         #TODO: Obtain media associated with message.media_hash and put it in the message.
         #TODO: Obtain media associated with message.member_info.thumbnail_hash and update the avatar.
@@ -32,14 +32,14 @@ class ChatMessageListItem(QListWidgetItem):
         #First check if we should be appended at the end to avoid iterating over
         #the whole list for each new message we receive
         count = parent.count()
-        if (count == 0) or (parent.item(count-1).message.payload.utc_timestamp <= timestamp):
+        if (count == 0) or (parent.item(count-1).message.utc_timestamp <= timestamp):
             parent.addItem(self)
             parent.setItemWidget(self, self.widget)
         else:
             #Insert ourselves in the appropiate place in the timeline.
             for row in xrange(0,count):
                 list_item = parent.item(row)
-                if list_item.message.payload.utc_timestamp > timestamp:
+                if list_item.message.utc_timestamp > timestamp:
                     row = parent.row(list_item)
                     parent.insertItem(row, self)
                     parent.setItemWidget(self, self.widget)
