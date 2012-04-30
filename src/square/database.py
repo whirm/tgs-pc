@@ -6,29 +6,30 @@ LATEST_VERSION = 1
 
 schema = u"""
 CREATE TABLE square(
- id INTEGER,                    -- the dispersy Community.database_id
+ dispersy_id INTEGER,           -- the dispersy Community.database_id
  global_time INTEGER,           -- the dispersy Message.distribution.global_time
- title TEXT,
- description TEXT,
  thumbnail_hash BLOB,
- PRIMARY KEY (id));
+ PRIMARY KEY (dispersy_id));
 
 CREATE TABLE member(
- id INTEGER,                    -- the dispersy Member.database_id
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ dispersy_id INTEGER,           -- the dispersy Member.database_id
  square INTEGER REFERENCES square(id),
- alias TEXT,
  thumbnail_hash BLOB,
- PRIMARY KEY (id, square));
+ UNIQUE (id, square));
 
 CREATE TABLE text(
- id INTEGER,                    -- the dispersy Message.database_id
+ dispersy_id INTEGER,           -- the dispersy Message.database_id
  global_time INTEGER,           -- the dispersy Message.distribution.global_time
  square INTEGER REFERENCES square(id),
  member INTEGER REFERENCES member(id),
- text TEXT,
  media_hash BLOB,
  utc_timestamp INTEGER,
- PRIMARY KEY (id));
+ PRIMARY KEY (dispersy_id));
+
+CREATE VIRTUAL TABLE square_fts USING fts4(title, description, tokenize=porter);
+CREATE VIRTUAL TABLE member_fts USING fts4(alias, tokenize=porter);
+CREATE VIRTUAL TABLE text_fts USING fts4(text, tokenize=porter);
 
 CREATE TABLE option(key TEXT PRIMARY KEY, value BLOB);
 INSERT INTO option(key, value) VALUES('database_version', '""" + str(LATEST_VERSION) + """');

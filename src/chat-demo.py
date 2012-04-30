@@ -108,14 +108,20 @@ class ChatCore:
 
         def response_func(message):
             if message:
-                dprint("received ", len(message.payload.hots), " hot messages")
+                if message.name == "search-member-response":
+                    dprint("received ", len(message.payload.members), " members")
+                if message.name == "search-square-response":
+                    dprint("received ", len(message.payload.squares), " squares")
+                if message.name == "search-text-response":
+                    dprint("received ", len(message.payload.texts), " texts")
             else:
                 dprint("received timeout, will occur for each search unless 999 responses are received")
 
-        self._discovery.keyword_search([u"test",], response_func)
         for index in xrange(999999):
             # user clicked the 'search' button
-            self._discovery.keyword_search([u"SIM", u"%d" % index], response_func)
+            self._discovery.simple_member_search(u"member test %d" % index, response_func)
+            self._discovery.simple_square_search(u"square test %d" % index, response_func)
+            self._discovery.simple_text_search(u"text test %d" % index, response_func)
             yield 1.0
 
     def onTextMessageReceived(self, message):

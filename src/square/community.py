@@ -68,9 +68,10 @@ class SquareBase(Community):
             self._dispersy.database.attach_commit_callback(self._database.commit)
 
         self._discovery = discovery
+        self._my_member_info = self._dispersy.get_last_message(self, self._my_member, self._meta_messages[u"member-info"])
 
         try:
-            self._update_global_time, self._title, self._description, thumbnail_hash = self._database.execute(u"SELECT global_time, title, description, thumbnail_hash FROM square WHERE id = ?", (self._database_id,)).next()
+            self._update_global_time, self._title, self._description, thumbnail_hash = self._database.execute(u"SELECT global_time, title, description, thumbnail_hash FROM square JOIN square_fts ON docid = dispersy_id WHERE dispersy_id = ?", (self._database_id,)).next()
             self._thumbnail_hash = str(thumbnail_hash)
         except StopIteration:
             self._update_global_time = 0
@@ -79,19 +80,29 @@ class SquareBase(Community):
             self._thumbnail_hash = ""
 
         try:
-            self._my_alias, my_thumbnail_hash = self._database.execute(u"SELECT alias, thumbnail_hash FROM member WHERE id = ? AND square = ?", (self._my_member.database_id, self._database_id)).next()
+            self._my_alias, my_thumbnail_hash = self._database.execute(u"SELECT alias, thumbnail_hash FROM member JOIN member_fts ON docid = dispersy_id WHERE dispersy_id = ? AND square = ?", (self._my_member.database_id, self._database_id)).next()
             self._my_thumbnail_hash = str(my_thumbnail_hash)
         except StopIteration:
             self._my_alias = u"Anonymous"
             self._my_thumbnail_hash = ""
 
-        if __debug__: dprint("new Square '", self._title, "'.  using alias '", self._my_alias, "'")
+        if __debug__: dprint("new Square '", self._title, "' using alias '", self._my_alias, "'")
 
         self.events = getEventBroker(self)
         self.global_events = getEventBroker(None)
 
         def load_history():
-            for id_, global_time, member_id, member_alias, member_thumbnail_hash, text, media_hash, utc_timestamp in self._database.execute(u"SELECT text.id, text.global_time, text.member, member.alias, member.thumbnail_hash, text.text, text.media_hash, text.utc_timestamp FROM text JOIN member ON member.id = text.member WHERE text.square = ? ORDER BY global_time, utc_timestamp DESC LIMIT 100", (self._database_id,)):
+            sql = u"""
+SELECT text.dispersy_id, text.global_time, member.id, member_fts.alias, member.thumbnail_hash, text_fts.text, text.media_hash, text.utc_timestamp
+FROM text
+JOIN text_fts ON text_fts.docid = text.dispersy_id
+JOIN member ON member.id = text.member
+JOIN member_fts ON member_fts.docid = member.dispersy_id
+WHERE text.square = ?
+ORDER BY text.global_time, text.utc_timestamp DESC
+LIMIT 100"""
+
+            for id_, global_time, member_id, member_alias, member_thumbnail_hash, text, media_hash, utc_timestamp in self._database.execute(sql, (self._database_id,)):
                 member = Member(self, member_id, member_alias, str(member_thumbnail_hash))
                 text = Text(self, id_, global_time, member, text, str(media_hash), utc_timestamp)
                 self.events.messageReceived(text)
@@ -188,11 +199,14 @@ class SquareBase(Community):
 
     def on_member_info(self, messages):
         data = []
+        data_fts = []
+
         for message in messages:
             member = Member(self, message.authentication.member.database_id, message.payload.alias, message.payload.thumbnail_hash)
 
             # database data
-            data.append((member.id, self._database_id, member.alias, buffer(member.thumbnail_hash)))
+            data.append((member.id, self._database_id, buffer(member.thumbnail_hash)))
+            data_fts.append((member.id, member.alias))
 
             if member.id == self._my_member.database_id:
                 self._my_alias = member.alias
@@ -200,7 +214,8 @@ class SquareBase(Community):
 
             self.events.memberInfoUpdated(member)
 
-        self._database.executemany(u"INSERT OR REPLACE INTO member (id, square, alias, thumbnail_hash) VALUES (?, ?, ?, ?)", data)
+        self._database.executemany(u"INSERT OR REPLACE INTO member (dispersy_id, square, thumbnail_hash) VALUES (?, ?, ?)", data)
+        self._database.executemany(u"INSERT OR REPLACE INTO member_fts (docid, alias) VALUES (?, ?)", data_fts)
 
     def undo_member_info(self, *args):
         pass
@@ -237,7 +252,8 @@ class SquareBase(Community):
                 self._title = message.payload.title
                 self._description = message.payload.description
                 self._thumbnail_hash = message.payload.thumbnail_hash
-                self._database.execute(u"INSERT OR REPLACE INTO square (id, global_time, title, description, thumbnail_hash) VALUES (?, ?, ?, ?, ?)", (self._database_id, self._update_global_time, self._title, self._description, buffer(self._thumbnail_hash)))
+                self._database.execute(u"INSERT OR REPLACE INTO square (dispersy_id, global_time, thumbnail_hash) VALUES (?, ?, ?)", (self._database_id, self._update_global_time, buffer(self._thumbnail_hash)))
+                self._database.execute(u"INSERT OR REPLACE INTO square_fts (docid, title, description) VALUES (?, ?, ?)", (self._database.last_insert_rowid, self._title, self._description))
                 update = True
 
         if update:
@@ -249,7 +265,7 @@ class SquareBase(Community):
 
     def post_text(self, text, media_hash):
         if self._my_member_info is None:
-            raise ValueError("invalid my member info, set_my_member_info must be called at least once before posting")
+            self.set_my_member_info(self._my_alias, self._my_thumbnail_hash)
         if not (isinstance(text, unicode) and len(text.encode("UTF-8")) < 1024):
             raise ValueError("invalid text")
         if not (isinstance(media_hash, str) and len(media_hash) in (0, 20)):
@@ -268,17 +284,21 @@ class SquareBase(Community):
 
     def on_text(self, messages, mark_as_hot=True):
         data = []
+        data_fts = []
+
         for message in messages:
             member = Member(self, message.payload.member_info.authentication.member.database_id, message.payload.member_info.payload.alias, message.payload.member_info.payload.thumbnail_hash)
             text = Text(self, message.packet_id, message.distribution.global_time, member, message.payload.text, message.payload.media_hash, message.payload.utc_timestamp)
 
             # database data
-            data.append((text.id, text.global_time, self._database_id, member.id, text.text, buffer(text.media_hash), text.utc_timestamp))
+            data.append((text.id, text.global_time, self._database_id, member.id, buffer(text.media_hash), text.utc_timestamp))
+            data_fts.append((text.id, text.text))
 
             # update GUI: message has been received
             self.events.messageReceived(text)
 
-        self._database.executemany(u"INSERT INTO text (id, global_time, square, member, text, media_hash, utc_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)", data)
+        self._database.executemany(u"INSERT INTO text (dispersy_id, global_time, square, member, media_hash, utc_timestamp) VALUES (?, ?, ?, ?, ?, ?)", data)
+        self._database.executemany(u"INSERT INTO text_fts (docid, text) VALUES (?, ?)", data_fts)
 
         if mark_as_hot:
             self._discovery.add_implicitly_hot_text(messages)

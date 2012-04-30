@@ -1,11 +1,14 @@
+from itertools import islice
+from os import path, makedirs
 from random import sample
 from time import time
 
 from conversion import Conversion
-from payload import HotsPayload, SearchPayload, SearchResponsePayload
+from payload import HotsPayload, SearchMemberRequestPayload, SearchSquareRequestPayload, SearchTextRequestPayload, SearchMemberResponsePayload, SearchSquareResponsePayload, SearchTextResponsePayload
 from hot import Hot, HotCache
 
 from square.community import PreviewCommunity
+from square.database import SquareDatabase
 
 from dispersy.member import DummyMember
 from dispersy.cache import CacheDict
@@ -23,6 +26,17 @@ if __debug__:
 class DiscoveryCommunity(Community):
     def __init__(self, *args):
         super(DiscoveryCommunity, self).__init__(*args)
+
+        self._database = SquareDatabase.has_instance()
+        if not self._database:
+            # our data storage
+            sqlite_directory = path.join(self._dispersy.working_directory, u"sqlite")
+            if not path.isdir(sqlite_directory):
+                makedirs(sqlite_directory)
+
+            self._database = SquareDatabase.get_instance(sqlite_directory)
+            self._dispersy.database.attach_commit_callback(self._database.commit)
+
         self._explicitly_hot_text = []
         self._implicitly_hot_text = []
         self._top_squares = []
@@ -34,8 +48,12 @@ class DiscoveryCommunity(Community):
 
     def initiate_meta_messages(self):
         return [Message(self, u"hots", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=5), HotsPayload(), self._dispersy._generic_timeline_check, self.on_hots),
-                Message(self, u"search", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchPayload(), self._dispersy._generic_timeline_check, self.on_search),
-                Message(self, u"search-response", NoAuthentication(), PublicResolution(), DirectDistribution(), CandidateDestination(), SearchResponsePayload(), self._dispersy._generic_timeline_check, self.on_search_response)]
+                Message(self, u"search-member-request", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchMemberRequestPayload(), self._dispersy._generic_timeline_check, self.on_search_member_request),
+                Message(self, u"search-square-request", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchSquareRequestPayload(), self._dispersy._generic_timeline_check, self.on_search_square_request),
+                Message(self, u"search-text-request", NoAuthentication(), PublicResolution(), DirectDistribution(), CommunityDestination(node_count=20), SearchTextRequestPayload(), self._dispersy._generic_timeline_check, self.on_search_text_request),
+                Message(self, u"search-member-response", NoAuthentication(), PublicResolution(), DirectDistribution(), CandidateDestination(), SearchMemberResponsePayload(), self._dispersy._generic_timeline_check, self.on_search_member_response),
+                Message(self, u"search-square-response", NoAuthentication(), PublicResolution(), DirectDistribution(), CandidateDestination(), SearchSquareResponsePayload(), self._dispersy._generic_timeline_check, self.on_search_square_response),
+                Message(self, u"search-text-response", NoAuthentication(), PublicResolution(), DirectDistribution(), CandidateDestination(), SearchTextResponsePayload(), self._dispersy._generic_timeline_check, self.on_search_text_response)]
 
     def initiate_conversions(self):
         return [DefaultConversion(self), Conversion(self)]
@@ -139,33 +157,172 @@ class DiscoveryCommunity(Community):
         if len(self._top_squares) + len(self._top_text) < 10:
             self._collect_top_hots()
 
-    def keyword_search(self, keywords, response_func, response_args=(), timeout=10.0):
-        return self.expression_search(u"|".join(keywords), response_func, response_args, timeout)
+    def simple_member_search(self, string, response_func, response_args=(), timeout=10.0):
+        pairs = [(min(len(keyword), 127), keyword) for keyword in string.split()]
+        return self.member_search(pairs, [], 1, response_func, response_args, timeout)
 
-    def expression_search(self, expression, response_func, response_args=(), timeout=10.0):
-        meta = self._meta_messages[u"search"]
-        message = meta.impl(distribution=(self.global_time,), payload=(expression,))
+    def simple_square_search(self, string, response_func, response_args=(), timeout=10.0):
+        pairs = [(min(len(keyword), 127), keyword) for keyword in string.split()]
+        return self.square_search(pairs, [], 1, response_func, response_args, timeout)
+
+    def simple_text_search(self, string, response_func, response_args=(), timeout=10.0):
+        pairs = [(min(len(keyword), 127), keyword) for keyword in string.split()]
+        return self.text_search(pairs, [], 1, response_func, response_args, timeout)
+
+    def member_search(self, terms, squares, threshold, response_func, response_args=(), timeout=10.0):
+        meta = self._meta_messages[u"search-member-request"]
+        message = meta.impl(distribution=(self.global_time,), payload=(0, terms, squares, threshold))
         if self._dispersy.store_update_forward([message], False, False, True):
-            meta = self._meta_messages[u"search-response"]
-            self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=999)
+            meta = self._meta_messages[u"search-member-response"]
+            self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=1)
         else:
             if __debug__: dprint("unable to search.  most likely there are no candidates", level="warning")
             response_func(None, *response_args)
 
         return message
 
-    def on_search(self, messages):
-        meta = self._meta_messages[u"search-response"]
+    def square_search(self, terms, squares, threshold, response_func, response_args=(), timeout=10.0):
+        meta = self._meta_messages[u"search-square-request"]
+        message = meta.impl(distribution=(self.global_time,), payload=(0, terms, squares, threshold))
+        if self._dispersy.store_update_forward([message], False, False, True):
+            meta = self._meta_messages[u"search-square-response"]
+            self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=1)
+        else:
+            if __debug__: dprint("unable to search.  most likely there are no candidates", level="warning")
+            response_func(None, *response_args)
+
+        return message
+
+    def text_search(self, terms, squares, threshold, response_func, response_args=(), timeout=10.0):
+        meta = self._meta_messages[u"search-text-request"]
+        message = meta.impl(distribution=(self.global_time,), payload=(0, terms, squares, threshold))
+        if self._dispersy.store_update_forward([message], False, False, True):
+            meta = self._meta_messages[u"search-text-response"]
+            self._dispersy.await_message(meta.generate_footprint(), response_func, response_args=response_args, timeout=timeout, max_responses=1)
+        else:
+            if __debug__: dprint("unable to search.  most likely there are no candidates", level="warning")
+            response_func(None, *response_args)
+
+        return message
+
+    def on_search_member_request(self, messages):
+        dispersy_execute = self._dispersy.database.execute
+        execute = self._database.execute
+        meta = self._meta_messages[u"search-member-response"]
+        responses = []
+
         for message in messages:
-            if __debug__: dprint("searching \\", message.payload.expression, "\\ for ", message.candidate)
+            payload = message.payload
+            if __debug__: dprint("searching ", " + ".join("%d:%s" % (weight, term) for weight, term in payload.terms), " for ", message.candidate)
 
-            # TODO currently always responding with whats hot
-            if self._implicitly_hot_text:
-                hots = [Hot(message.community.cid, msg.authentication.member.mid, msg.distribution.global_time) for msg in self._implicitly_hot_text[:10]]
+            results = dict()
+            for weight, term in payload.terms:
+                for docid, in execute(u"SELECT docid FROM member_fts WHERE alias MATCH ?", (term,)):
+                    if docid in results:
+                        results[docid] += weight
+                    else:
+                        results[docid] = weight
 
-                response = meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(hots,))
-                self._dispersy.store_update_forward([response], False, False, True)
-                if __debug__: dprint("responding with ", len(hots), " hot messages")
+            results = sorted(results.iteritems(), key=lambda tup:tup[1], reverse=True)
+            members = []
+            for docid, weight in islice(results, 24):
+                try:
+                    member_id, community_id = execute(u"SELECT dispersy_id, square FROM member WHERE id = ?", (docid,)).next()
+                    cid, = dispersy_execute(u"SELECT master.mid FROM community JOIN member AS master ON master.id = community.master WHERE community.id = ?", (community_id,)).next()
+                    mid, = dispersy_execute(u"SELECT mid FROM member WHERE id = ?", (member_id,)).next()
+                except StopIteration:
+                    if __debug__: dprint("unable to determine results for docid ", docid, level="error", exception=1)
+                    continue
+                else:
+                    members.append((weight, str(cid), str(mid)))
 
-    def on_search_response(self, messages):
+            if members:
+                responses.append(meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(payload.identifier, members)))
+
+        if responses:
+            self._dispersy.store_update_forward(responses, False, False, True)
+
+    def on_search_square_request(self, messages):
+        dispersy_execute = self._dispersy.database.execute
+        execute = self._database.execute
+        meta = self._meta_messages[u"search-square-response"]
+        responses = []
+
+        for message in messages:
+            payload = message.payload
+            if __debug__: dprint("searching ", " + ".join("%d:%s" % (weight, term) for weight, term in payload.terms), " for ", message.candidate)
+
+            results = dict()
+            for weight, term in payload.terms:
+                for docid, in execute(u"SELECT docid FROM square_fts WHERE title MATCH ?", (term,)):
+                    if docid in results:
+                        results[docid] += weight
+                    else:
+                        results[docid] = weight
+
+                for docid, in execute(u"SELECT docid FROM square_fts WHERE description MATCH ?", (term,)):
+                    if docid in results:
+                        results[docid] += weight
+                    else:
+                        results[docid] = weight
+
+            results = sorted(results.iteritems(), key=lambda tup:tup[1], reverse=True)
+            squares = []
+            for docid, weight in islice(results, 48):
+                try:
+                    cid, = dispersy_execute(u"SELECT master.mid FROM community JOIN member AS master ON master.id = community.master WHERE community.id = ?", (docid,)).next()
+                except StopIteration:
+                    if __debug__: dprint("unable to determine results for docid ", docid, level="error")
+                    continue
+                else:
+                    squares.append((weight, str(cid)))
+
+            if squares:
+                responses.append(meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(payload.identifier, squares,)))
+
+        if responses:
+            self._dispersy.store_update_forward(responses, False, False, True)
+
+    def on_search_text_request(self, messages):
+        dispersy_execute = self._dispersy.database.execute
+        execute = self._database.execute
+        meta = self._meta_messages[u"search-text-response"]
+        responses = []
+
+        for message in messages:
+            payload = message.payload
+            if __debug__: dprint("searching ", " + ".join("%d:%s" % (weight, term) for weight, term in payload.terms), " for ", message.candidate)
+
+            results = dict()
+            for weight, term in payload.terms:
+                for docid, in execute(u"SELECT docid FROM text_fts WHERE text MATCH ?", (term,)):
+                    if docid in results:
+                        results[docid] += weight
+                    else:
+                        results[docid] = weight
+
+            results = sorted(results.iteritems(), key=lambda tup:tup[1], reverse=True)
+            texts = []
+            for docid, weight in islice(results, 20):
+                try:
+                    cid, mid, global_time = dispersy_execute(u"SELECT master.mid, member.mid, sync.global_time FROM sync JOIN community ON community.id = sync.community JOIN member AS master ON master.id = community.master JOIN member ON member.id = sync.member WHERE sync.id = ?", (docid,)).next()
+                except StopIteration:
+                    if __debug__: dprint("unable to determine results for docid ", docid, level="error")
+                    continue
+                else:
+                    texts.append((weight, str(cid), str(mid), global_time))
+
+            if texts:
+                responses.append(meta.impl(distribution=(self.global_time,), destination=(message.candidate,), payload=(payload.identifier, texts,)))
+
+        if responses:
+            self._dispersy.store_update_forward(responses, False, False, True)
+
+    def on_search_member_response(self, messages):
+        pass
+
+    def on_search_square_response(self, messages):
+        pass
+
+    def on_search_text_response(self, messages):
         pass
