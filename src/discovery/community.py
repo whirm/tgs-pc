@@ -96,22 +96,23 @@ class DiscoveryCommunity(Community):
                 pass
 
     def _select_and_announce_hot(self):
-        meta = self._meta_messages[u"hots"]
-        while True:
-            # TODO yield 60.0, lowered for debugging
-            yield 10.0
-            # what is hot?
-            # explicit: a message the user marked as 'hot'
-            # implicit: a newly received message
-            messages = sample(self._explicitly_hot_text, min(15, len(self._explicitly_hot_text)))
-            messages.extend(sample(self._implicitly_hot_text, min(20-len(messages), len(self._implicitly_hot_text))))
-            # TODO all messages should be unique
+        pass
+        # meta = self._meta_messages[u"hots"]
+        # while True:
+        #     # TODO yield 60.0, lowered for debugging
+        #     yield 10.0
+        #     # what is hot?
+        #     # explicit: a message the user marked as 'hot'
+        #     # implicit: a newly received message
+        #     messages = sample(self._explicitly_hot_text, min(15, len(self._explicitly_hot_text)))
+        #     messages.extend(sample(self._implicitly_hot_text, min(20-len(messages), len(self._implicitly_hot_text))))
+        #     # TODO all messages should be unique
 
-            if messages:
-                if __debug__: dprint(len(messages), "x text")
-                hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in messages]
-                message = meta.impl(distribution=(self.global_time,), payload=(hots,))
-                self._dispersy.store_update_forward([message], False, False, True)
+        #     if messages:
+        #         if __debug__: dprint(len(messages), "x text")
+        #         hots = [Hot(message.community.cid, message.authentication.member.mid, message.distribution.global_time) for message in messages]
+        #         message = meta.impl(distribution=(self.global_time,), payload=(hots,))
+        #         self._dispersy.store_update_forward([message], False, False, True)
 
     def _collect_top_hots(self):
         now = time()
