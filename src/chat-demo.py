@@ -6,7 +6,6 @@
 import sip
 sip.setapi('QString', 2)
 
-import communication
 import time
 import sys
 
@@ -14,6 +13,7 @@ from discovery.community import DiscoveryCommunity
 from square.community import PreviewCommunity, SquareCommunity
 import events
 
+from dispersy.endpoint import StandaloneEndpoint
 from dispersy.callback import Callback
 from dispersy.dispersy import Dispersy
 from dispersy.member import Member
@@ -60,11 +60,12 @@ class ChatCore:
     def dispersy(self, callback):
         # start Dispersy
         dispersy = Dispersy.get_instance(callback, u".")
-        dispersy.socket = communication.get_socket(callback, dispersy)
+        dispersy.endpoint = StandaloneEndpoint(dispersy, 12345)
+        dispersy.endpoint.start()
 
         # load/join discovery community
         public_key = "3081a7301006072a8648ce3d020106052b81040027038192000406b34f060c416e452fd31fb1770c2f475e928effce751f2f82565bec35c46a97fb8b375cca4ac5dc7d93df1ba594db335350297f003a423e207b53709e6163b7688c0f60a9cf6599037829098d5fbbfe786e0cb95194292f241ff6ae4d27c6414f94de7ed1aa62f0eb6ef70d2f5af97c9aade8266eb85b14296ed2004646838c056d1d9ad8a509b69f81fbc726201b57".decode("HEX")
-        if True:
+        if False:
             # when crypto.py is disabled a public key is slightly
             # different...
             public_key = ";".join(("60", public_key[:60].encode("HEX"), ""))
