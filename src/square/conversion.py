@@ -1,7 +1,7 @@
 from struct import pack, unpack_from
 
 from dispersy.conversion import BinaryConversion
-from dispersy.message import DropPacket, DelayPacketByMissingMessage
+from dispersy.message import DropPacket, DelayPacketByMissingLastMessage
 
 class Conversion(BinaryConversion):
     def __init__(self, community):
@@ -104,9 +104,8 @@ class Conversion(BinaryConversion):
             raise DropPacket("Insufficient packet size")
         member_info_global_time, utc_timestamp, text_length = unpack_from("!QqH", data, offset)
         member_info = self._community.dispersy.get_last_message(self._community, placeholder.authentication.member, self._community.get_meta_message(u"member-info"))
-        if not (member_info and member_info_global_time < member_info.distribution.global_time):
-            # TODO implement DelayPacketByMissingLastMessage
-            raise DelayPacketByMissingMessage(self._community, placeholder.authentication.member, [member_info_global_time])
+        if not (member_info and member_info_global_time <= member_info.distribution.global_time):
+            raise DelayPacketByMissingLastMessage(self._community, placeholder.authentication.member, self._community.get_meta_message(u"member-info"), 1)
         utc_timestamp = long(utc_timestamp)
         if not text_length < 1024:
             raise DropPacket("invalid text_length")

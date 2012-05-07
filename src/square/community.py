@@ -1,4 +1,5 @@
 from os import path, makedirs
+from sys import maxsize
 
 from conversion import Conversion
 from database import SquareDatabase
@@ -9,48 +10,53 @@ from dispersy.authentication import MemberAuthentication
 from dispersy.community import Community
 from dispersy.conversion import DefaultConversion
 from dispersy.destination import CommunityDestination
+from dispersy.dispersy import MissingMessageCache, MissingLastMessageCache, CANDIDATE_WALKER_CALLBACK_ID
 from dispersy.distribution import FullSyncDistribution, LastSyncDistribution
 from dispersy.member import DummyMember
 from dispersy.message import Message
 from dispersy.resolution import DynamicResolution, PublicResolution, LinearResolution
-
 if __debug__:
     from dispersy.dprint import dprint
 
 class Member(object):
-    __slots__ = ["square", "id", "alias", "thumbnail_hash"]
+    __slots__ = ["square", "sync_id", "member_id", "alias", "thumbnail_hash"]
 
-    def __init__(self, square, id_, alias, thumbnail_hash):
+    def __init__(self, square, sync_id, member_id, alias, thumbnail_hash):
         assert isinstance(square, SquareBase)
-        assert isinstance(id_, (int, long))
+        assert isinstance(sync_id, (int, long))
+        assert isinstance(member_id, (int, long))
         assert isinstance(alias, unicode)
         assert isinstance(thumbnail_hash, str)
         self.square = square
-        self.id = id_
+        self.sync_id = sync_id
+        self.member_id = member_id
         self.alias = alias
         self.thumbnail_hash = thumbnail_hash
 
-class Text(object):
-    __slots__ = ["square", "id", "global_time", "member", "text", "media_hash", "utc_timestamp"]
+    def __str__(self):
+        return "<Member %d: %s>" % (self.sync_id, self.alias)
 
-    def __init__(self, square, id_, global_time, member, text, media_hash, utc_timestamp):
+class Text(object):
+    __slots__ = ["square", "member", "sync_id", "global_time", "text", "media_hash", "utc_timestamp"]
+
+    def __init__(self, square, member, sync_id, global_time, text, media_hash, utc_timestamp):
         assert isinstance(square, SquareBase)
-        assert isinstance(id_, (int, long))
-        assert isinstance(global_time, (int, long))
         assert isinstance(member, Member)
+        assert isinstance(sync_id, (int, long))
+        assert isinstance(global_time, (int, long))
         assert isinstance(text, unicode)
         assert isinstance(media_hash, str)
         assert isinstance(utc_timestamp, (int, long))
         self.square = square
-        self.id = id_
-        self.global_time = global_time
         self.member = member
+        self.sync_id = sync_id
+        self.global_time = global_time
         self.text = text
         self.media_hash = media_hash
         self.utc_timestamp = utc_timestamp
 
     def __str__(self):
-        return "<Text %d@%d %s>" % (self.id, self.global_time, self.text)
+        return "<Text %d: %s>" % (self.sync_id, self.text)
 
 class SquareBase(Community):
     def __init__(self, master, discovery):
@@ -70,8 +76,9 @@ class SquareBase(Community):
         self._discovery = discovery
         self._my_member_info = self._dispersy.get_last_message(self, self._my_member, self._meta_messages[u"member-info"])
 
+        # get square info from self._database_id
         try:
-            self._update_global_time, self._title, self._description, thumbnail_hash = self._database.execute(u"SELECT global_time, title, description, thumbnail_hash FROM square JOIN square_fts ON docid = dispersy_id WHERE dispersy_id = ?", (self._database_id,)).next()
+            self._update_global_time, self._title, self._description, thumbnail_hash = self._database.execute(u"SELECT global_time, title, description, thumbnail_hash FROM square JOIN square_fts ON docid = sync_id WHERE square_id = ?", (self._database_id,)).next()
             self._thumbnail_hash = str(thumbnail_hash)
         except StopIteration:
             self._update_global_time = 0
@@ -79,12 +86,15 @@ class SquareBase(Community):
             self._description = u""
             self._thumbnail_hash = ""
 
+        # get my member info from self._database_id and self._my_member.database_id
         try:
-            self._my_alias, my_thumbnail_hash = self._database.execute(u"SELECT alias, thumbnail_hash FROM member JOIN member_fts ON docid = dispersy_id WHERE dispersy_id = ? AND square = ?", (self._my_member.database_id, self._database_id)).next()
+            self._my_alias, my_thumbnail_hash = self._database.execute(u"SELECT alias, thumbnail_hash FROM member JOIN member_fts ON docid = sync_id WHERE member_id = ? AND square_id = ?", (self._my_member.database_id, self._database_id)).next()
             self._my_thumbnail_hash = str(my_thumbnail_hash)
         except StopIteration:
             self._my_alias = u"Anonymous"
             self._my_thumbnail_hash = ""
+
+        self._dependencies = 0
 
         if __debug__: dprint("new Square '", self._title, "' using alias '", self._my_alias, "'")
 
@@ -93,19 +103,33 @@ class SquareBase(Community):
 
         def load_history():
             sql = u"""
-SELECT text.dispersy_id, text.global_time, member.id, member_fts.alias, member.thumbnail_hash, text_fts.text, text.media_hash, text.utc_timestamp
+SELECT text.sync_id, text_fts.text, text.media_hash, text.utc_timestamp, text.global_time, member.sync_id, member.member_id, member_fts.alias, member.thumbnail_hash
 FROM text
-JOIN text_fts ON text_fts.docid = text.dispersy_id
-JOIN member ON member.id = text.member
-JOIN member_fts ON member_fts.docid = member.dispersy_id
-WHERE text.square = ?
+JOIN text_fts ON text_fts.docid = text.sync_id
+JOIN member ON member.member_id = text.member_id
+JOIN member_fts ON member_fts.docid = member.sync_id
+WHERE text.square_id = ?
 ORDER BY text.global_time, text.utc_timestamp DESC
 LIMIT 100"""
 
-            for id_, global_time, member_id, member_alias, member_thumbnail_hash, text, media_hash, utc_timestamp in self._database.execute(sql, (self._database_id,)):
-                member = Member(self, member_id, member_alias, str(member_thumbnail_hash))
-                text = Text(self, id_, global_time, member, text, str(media_hash), utc_timestamp)
+            member_id = global_time = 0
+            for text_sync_id, text, media_hash, utc_timestamp, global_time, member_sync_id, member_id, member_alias, member_thumbnail_hash in self._database.execute(sql, (self._database_id,)):
+                member = Member(self, member_sync_id, member_id, member_alias, str(member_thumbnail_hash))
+                text = Text(self, member, text_sync_id, global_time, text, str(media_hash), utc_timestamp)
+                if __debug__: dprint(text)
                 self.events.messageReceived(text)
+
+            if member_id and global_time:
+                # use one message to implicitly announce this square
+                try:
+                    packet, = self._dispersy.database.execute(u"SELECT packet FROM sync WHERE community = ? AND member = ? AND global_time = ?",
+                                                              (self._database_id, member_id, global_time)).next()
+                except StopIteration:
+                    pass
+                else:
+                    message = self._dispersy.convert_packet_to_message(str(packet), self)
+                    self._discovery.add_implicitly_hot_text([message])
+
         self._dispersy.callback.register(load_history, delay=1.0)
 
     def initiate_meta_messages(self):
@@ -202,20 +226,25 @@ LIMIT 100"""
         data_fts = []
 
         for message in messages:
-            member = Member(self, message.authentication.member.database_id, message.payload.alias, message.payload.thumbnail_hash)
+            member = self.message_to_member(message)
+            if __debug__: dprint("member #", member.member_id, ": ", member.alias)
 
             # database data
-            data.append((member.id, self._database_id, buffer(member.thumbnail_hash)))
-            data_fts.append((member.id, member.alias))
+            data.append((member.sync_id, member.member_id, self._database_id, buffer(member.thumbnail_hash)))
+            data_fts.append((member.sync_id, member.alias))
 
-            if member.id == self._my_member.database_id:
+            if member.member_id == self._my_member.database_id:
                 self._my_alias = member.alias
                 self._my_thumbnail_hash = member.thumbnail_hash
 
             self.events.memberInfoUpdated(member)
 
-        self._database.executemany(u"INSERT OR REPLACE INTO member (dispersy_id, square, thumbnail_hash) VALUES (?, ?, ?)", data)
+        self._database.executemany(u"INSERT OR REPLACE INTO member (sync_id, member_id, square_id, thumbnail_hash) VALUES (?, ?, ?, ?)", data)
         self._database.executemany(u"INSERT OR REPLACE INTO member_fts (docid, alias) VALUES (?, ?)", data_fts)
+
+        # this might be a response to a dispersy-missing-message
+        self._dispersy.handle_missing_messages(messages, MissingLastMessageCache)
+        self._dispersy.handle_missing_messages(messages, MissingMessageCache)
 
     def undo_member_info(self, *args):
         pass
@@ -252,13 +281,17 @@ LIMIT 100"""
                 self._title = message.payload.title
                 self._description = message.payload.description
                 self._thumbnail_hash = message.payload.thumbnail_hash
-                self._database.execute(u"INSERT OR REPLACE INTO square (dispersy_id, global_time, thumbnail_hash) VALUES (?, ?, ?)", (self._database_id, self._update_global_time, buffer(self._thumbnail_hash)))
-                self._database.execute(u"INSERT OR REPLACE INTO square_fts (docid, title, description) VALUES (?, ?, ?)", (self._database.last_insert_rowid, self._title, self._description))
+                self._database.execute(u"INSERT OR REPLACE INTO square (sync_id, square_id, global_time, thumbnail_hash) VALUES (?, ?, ?, ?)", (message.packet_id, self._database_id, self._update_global_time, buffer(self._thumbnail_hash)))
+                self._database.execute(u"INSERT OR REPLACE INTO square_fts (docid, title, description) VALUES (?, ?, ?)", (message.packet_id, self._title, self._description))
                 update = True
 
         if update:
+            if __debug__: dprint("square ", self._title)
             # update GUI: square info has changed
             self.events.squareInfoUpdated()
+
+        # this might be a response to a dispersy-missing-message
+        self._dispersy.handle_missing_messages(messages, MissingMessageCache)
 
     def undo_square_info(self, *args):
         pass
@@ -287,25 +320,54 @@ LIMIT 100"""
         data_fts = []
 
         for message in messages:
-            member = Member(self, message.payload.member_info.authentication.member.database_id, message.payload.member_info.payload.alias, message.payload.member_info.payload.thumbnail_hash)
-            text = Text(self, message.packet_id, message.distribution.global_time, member, message.payload.text, message.payload.media_hash, message.payload.utc_timestamp)
+            text = self.message_to_text(message)
+            if __debug__: dprint("text ", text.member.alias, " says ", text.text)
 
             # database data
-            data.append((text.id, text.global_time, self._database_id, member.id, buffer(text.media_hash), text.utc_timestamp))
-            data_fts.append((text.id, text.text))
+            data.append((text.sync_id, self._database_id, text.member.member_id, text.global_time, buffer(text.media_hash), text.utc_timestamp))
+            data_fts.append((text.sync_id, text.text))
 
             # update GUI: message has been received
             self.events.messageReceived(text)
 
-        self._database.executemany(u"INSERT INTO text (dispersy_id, global_time, square, member, media_hash, utc_timestamp) VALUES (?, ?, ?, ?, ?, ?)", data)
+        self._database.executemany(u"INSERT INTO text (sync_id, square_id, member_id, global_time, media_hash, utc_timestamp) VALUES (?, ?, ?, ?, ?, ?)", data)
         self._database.executemany(u"INSERT INTO text_fts (docid, text) VALUES (?, ?)", data_fts)
 
         if mark_as_hot:
             self._discovery.add_implicitly_hot_text(messages)
 
+        # this might be a response to a dispersy-missing-message
+        self._dispersy.handle_missing_messages(messages, MissingMessageCache)
+
+    def message_to_member(self, message):
+        assert message.name == u"member-info"
+        return Member(self, message.packet_id, message.authentication.member.database_id, message.payload.alias, message.payload.thumbnail_hash)
+
+    def message_to_text(self, message):
+        assert message.name == u"text"
+        return Text(self, self.message_to_member(message.payload.member_info), message.packet_id, message.distribution.global_time, message.payload.text, message.payload.media_hash, message.payload.utc_timestamp)
+
     def undo_text(self, *args):
         pass
 
+    def fetch_message(self, mid, global_time, source, response_func=None, response_args=(), timeout=10.0):
+        members = self._dispersy.get_members_from_id(mid)
+        if members:
+            for member in members:
+                message = self._dispersy.get_message(self, member, global_time)
+                if message:
+                    if __debug__: dprint("message found")
+                    return message
+
+                else:
+                    if __debug__: dprint("fetching message")
+                    self._dispersy.create_missing_message_newstyle(self, source, member, global_time, response_func, response_args, timeout)
+
+        else:
+            if __debug__: dprint("fetching identity")
+            self._dispersy.create_missing_identity(self, source, DummyMember(mid), response_func, response_args, timeout)
+
+    # TODO remove fetch_hot_text
     def fetch_hot_text(self, hot):
         members = self._dispersy.get_members_from_id(hot.mid)
         if members:
@@ -320,6 +382,19 @@ LIMIT 100"""
         else:
             self._dispersy.create_missing_identity(self, hot.sources[0], DummyMember(hot.mid))
 
+
+    def has_dependencies(self):
+        return self._dependencies > 0
+
+    def inc_dependencies(self):
+        self._dependencies += 1
+
+    def dec_dependencies(self):
+        self._dependencies -= 1
+
+    def __str__(self):
+        return "<%s %s>" % (self.__class__.__name__, self.title)
+
 class SquareCommunity(SquareBase):
     def __init__(self, *argv, **kwargs):
         super(SquareCommunity, self).__init__(*argv, **kwargs)
@@ -331,25 +406,58 @@ class SquareCommunity(SquareBase):
         return self._dispersy.reclassify_community(self, PreviewCommunity)
 
 class PreviewCommunity(SquareBase):
-    def __init__(self, *argv, **kwargs):
-        super(PreviewCommunity, self).__init__(*argv, **kwargs)
+    def __init__(self, master, discovery, enable_walker):
+        assert isinstance(enable_walker, bool)
+
+        # set before calling super
+        self._enable_walker = enable_walker
+
+        super(PreviewCommunity, self).__init__(master, discovery)
+        self._auto_unload_identifier = "auto-unload-preview-community-%s" % self._cid.encode("HEX")
+        self._pending_callbacks.append(self._auto_unload_identifier)
+
         #Notify about new square creation
         self.global_events.newPreviewCommunityCreated(self)
+
+    def dec_dependencies(self):
+        super(PreviewCommunity, self).dec_dependencies()
+
+        if self._dependencies <= 0:
+            # unload after the grace period
+            self._dispersy.callback.replace_register(self._auto_unload_identifier, self.auto_unload_community, delay=300.0)
+
+    def auto_unload_community(self):
+        if self._dependencies <=0:
+            if __debug__: dprint("cleanup", box=1)
+            self.unload_community()
 
     def on_text(self, messages, mark_as_hot=False):
         return super(PreviewCommunity, self).on_text(messages, mark_as_hot=mark_as_hot)
 
+    def start_candidate_walker(self):
+        assert not self._enable_walker
+        self._enable_walker = True
+        # hacking the walker...
+        self._dispersy._walker_commmunities.insert(0, self)
+        # restart walker scheduler
+        self._dispersy.callback.replace_register(CANDIDATE_WALKER_CALLBACK_ID, self._dispersy._candidate_walker)
+
     def join_square(self):
         return self._dispersy.reclassify_community(self, SquareCommunity)
 
-    # @property
-    # def dispersy_acceptable_global_time_range(self):
-    #     # we will accept the full 64 bit global time range
-    #     return 2**64 - self._global_time
+    @property
+    def dispersy_acceptable_global_time_range(self):
+        # we will accept the full 64 bit global time range
+        return maxsize
 
-    # @property
-    # def dispersy_enable_candidate_walker(self):
-    #     return False
+    @property
+    def dispersy_enable_candidate_walker(self):
+        return self._enable_walker
+
+    @property
+    def dispersy_enable_candidate_walker_responses(self):
+        # allow responses, otherwise we will not be able to enable/disable the walker on demand
+        return True
 
 
 from events import getEventBroker

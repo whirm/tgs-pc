@@ -2,13 +2,18 @@ from dispersy.payload import Payload
 
 class HotsPayload(Payload):
     class Implementation(Payload.Implementation):
-        def __init__(self, meta, hots):
+        def __init__(self, meta, suggestions):
+            """
+            Implement hots message.
+
+            SUGGESTIONS is a list containing (weight, community-id, member-id, global-time) quadruples.
+            """
             super(HotsPayload.Implementation, self).__init__(meta)
-            self._hots = hots
+            self._suggestions = suggestions
 
         @property
-        def hots(self):
-            return self._hots
+        def suggestions(self):
+            return self._suggestions
 
 class SearchRequestPayload(Payload):
     class Implementation(Payload.Implementation):
@@ -45,41 +50,24 @@ class SearchSquareRequestPayload(SearchRequestPayload):
 class SearchTextRequestPayload(SearchRequestPayload):
     pass
 
-class SearchMemberResponsePayload(Payload):
+class SearchResponsePayload(Payload):
     class Implementation(Payload.Implementation):
-        def __init__(self, meta, identifier, members):
+        def __init__(self, meta, identifier, suggestions):
             """
             Implement search response.
 
             IDENTIFIER is a 2 byte number.
-            MEMBERS is a list containing (weight, community-id, member-id) triplets.
+            SUGGESTIONS is a list containing (weight, community-id, member-id, global-time) quadruples.
             """
-            super(SearchMemberResponsePayload.Implementation, self).__init__(meta)
+            super(SearchResponsePayload.Implementation, self).__init__(meta)
             self.identifier = identifier
-            self.members = members
+            self.suggestions = suggestions
 
-class SearchSquareResponsePayload(Payload):
-    class Implementation(Payload.Implementation):
-        def __init__(self, meta, identifier, squares):
-            """
-            Implement search response.
+class SearchMemberResponsePayload(SearchResponsePayload):
+    pass
 
-            IDENTIFIER is a 2 byte number.
-            SQUARES is a list containing (weight, community-id) pairs.
-            """
-            super(SearchSquareResponsePayload.Implementation, self).__init__(meta)
-            self.identifier = identifier
-            self.squares = squares
+class SearchSquareResponsePayload(SearchResponsePayload):
+    pass
 
-class SearchTextResponsePayload(Payload):
-    class Implementation(Payload.Implementation):
-        def __init__(self, meta, identifier, texts):
-            """
-            Implement search response.
-
-            IDENTIFIER is a 2 byte number.
-            TEXTS is a list containing (weight, community-id, member-id, global-time) quadruples.
-            """
-            super(SearchTextResponsePayload.Implementation, self).__init__(meta)
-            self.identifier = identifier
-            self.texts = texts
+class SearchTextResponsePayload(SearchResponsePayload):
+    pass

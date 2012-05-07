@@ -6,26 +6,28 @@ LATEST_VERSION = 1
 
 schema = u"""
 CREATE TABLE square(
- dispersy_id INTEGER,           -- the dispersy Community.database_id
- global_time INTEGER,           -- the dispersy Message.distribution.global_time
+ sync_id INTEGER,                               -- sync.id for square_info message
+ square_id INTEGER,                             -- community.id for the square
+ global_time INTEGER,                           -- sync.global_time for text message
  thumbnail_hash BLOB,
- PRIMARY KEY (dispersy_id));
+ PRIMARY KEY (sync_id));
 
 CREATE TABLE member(
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- dispersy_id INTEGER,           -- the dispersy Member.database_id
- square INTEGER REFERENCES square(id),
+ sync_id INTEGER,                               -- sync.id for member_info message
+ member_id INTEGER,                             -- sync.member for member_info message
+ square_id INTEGER REFERENCES square(sync_id),  -- community.id for the square
  thumbnail_hash BLOB,
- UNIQUE (id, square));
+ PRIMARY KEY (sync_id),
+ UNIQUE (member_id, square_id));
 
 CREATE TABLE text(
- dispersy_id INTEGER,           -- the dispersy Message.database_id
- global_time INTEGER,           -- the dispersy Message.distribution.global_time
- square INTEGER REFERENCES square(id),
- member INTEGER REFERENCES member(id),
+ sync_id INTEGER,                               -- sync.id for text message
+ square_id INTEGER REFERENCES square(sync_id),  -- community.id for the square
+ member_id INTEGER REFERENCES member(sync_id),  -- sync.member for member info message
+ global_time INTEGER,                           -- sync.global_time for text message
  media_hash BLOB,
  utc_timestamp INTEGER,
- PRIMARY KEY (dispersy_id));
+ PRIMARY KEY (sync_id));
 
 CREATE VIRTUAL TABLE square_fts USING fts4(title, description, tokenize=porter);
 CREATE VIRTUAL TABLE member_fts USING fts4(alias, tokenize=porter);

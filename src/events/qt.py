@@ -27,7 +27,7 @@ class QtEventBroker(QObject):
             self._event_name=event
 
         def __call__(self, *argv):
-            print "EventQT: %s fired with %s" % (self._event_name, argv)
+            #print "EventQT: %s fired with %s" % (self._event_name, argv)
             if argv:
                 self._broker.emit(SIGNAL(self._event_name), *argv)
             else:

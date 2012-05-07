@@ -8,6 +8,7 @@ sip.setapi('QString', 2)
 
 import time
 import sys
+import os
 
 from discovery.community import DiscoveryCommunity
 from square.community import PreviewCommunity, SquareCommunity
@@ -58,8 +59,13 @@ class ChatCore:
         self._square_search_dialog = None
 
     def dispersy(self, callback):
+        if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
+            workdir = unicode(sys.argv[1])
+        else:
+            workdir = u"."
+
         # start Dispersy
-        dispersy = Dispersy.get_instance(callback, u".")
+        dispersy = Dispersy.get_instance(callback, workdir)
         dispersy.endpoint = StandaloneEndpoint(dispersy, 12345)
         dispersy.endpoint.start()
 
@@ -79,7 +85,7 @@ class ChatCore:
         else:
             self._my_member = self._discovery.my_member
 
-        dispersy.define_auto_load(PreviewCommunity, (self._discovery,))
+        dispersy.define_auto_load(PreviewCommunity, (self._discovery, False))
         dispersy.define_auto_load(SquareCommunity, (self._discovery,))
 
         # load squares
@@ -107,23 +113,20 @@ class ChatCore:
         #    community.post_text(u"SIM message %d" % index, "")
         #    yield 1.0
 
-        def response_func(message):
-            if message:
-                if message.name == "search-member-response":
-                    dprint("received ", len(message.payload.members), " members")
-                if message.name == "search-square-response":
-                    dprint("received ", len(message.payload.squares), " squares")
-                if message.name == "search-text-response":
-                    dprint("received ", len(message.payload.texts), " texts")
-            else:
-                dprint("received timeout, will occur for each search unless 999 responses are received")
+        def response_func(cache, event, request_timestamp):
+            if cache:
+                dprint(round(time.time() - request_timestamp, 2), "s ", event, "! received ", len(cache.suggestions), " suggestions; retrieved ", sum(1 if suggestion.hit else 0 for suggestion in cache.suggestions), " hits", force=1)
+
+        yield 3.0
 
         for index in xrange(999999):
             # user clicked the 'search' button
-            self._discovery.simple_member_search(u"member test %d" % index, response_func)
-            self._discovery.simple_square_search(u"square test %d" % index, response_func)
-            self._discovery.simple_text_search(u"text test %d" % index, response_func)
-            yield 1.0
+            dprint("NEW SEARCH", line=1, force=1)
+            now = time.time()
+            self._discovery.simple_member_search(u"member test %d" % index, response_func, (now,))
+            self._discovery.simple_square_search(u"square test %d" % index, response_func, (now,))
+            self._discovery.simple_text_search(u"text test %d" % index, response_func, (now,))
+            yield 30.0
 
     def onTextMessageReceived(self, message):
         #Put the message in the overview list
@@ -301,7 +304,8 @@ class ChatCore:
         callback.start(name="Dispersy")
 
         callback.register(self.dispersy, (callback,))
-        callback.register(self.DEBUG_SIMULATION)
+        if "--simulate" in sys.argv:
+            callback.register(self.DEBUG_SIMULATION)
         self.callback = callback
 
         #pyside:
