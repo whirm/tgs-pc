@@ -448,7 +448,7 @@ class PreviewCommunity(SquareBase):
     @property
     def dispersy_acceptable_global_time_range(self):
         if self._enable_walker:
-            return super(PreviewCommunity, self).dispersy_acceptable_global_time_range()
+            return super(PreviewCommunity, self).dispersy_acceptable_global_time_range
         else:
             # we will accept the full 64 bit global time range
             return 2**64-1

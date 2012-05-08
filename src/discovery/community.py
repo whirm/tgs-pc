@@ -34,7 +34,7 @@ class Suggestion(object):
         self.hit = None
 
     def __str__(self):
-        return "<Suggestion %s weight:%d attempt:%d>" % (self.state, self.weight, self.attempt)
+        return "<%s %s weight:%d id:%d %s:%s:%d>" % (self.__class__.__name__, self.state, self.weight, id(self), self.cid.encode("HEX"), self.mid.encode("HEX"), self.global_time)
 
     def _result(self, message, repository):
         if message and message.name == self.message_name:
@@ -82,7 +82,7 @@ class Suggestion(object):
 
                 # get message
                 source = self.sources[int(random() * len(self.sources))]
-                if __debug__: dprint("fetch ", self, " from ", source, " (attempt #", self.attempt, ")")
+                if __debug__: dprint(self, " from ", source, " (attempt #", self.attempt, ")")
                 message = self.square.fetch_message(self.mid, self.global_time, source, self._fetch_retry, (repository,), 5.0 if __debug__ else 1.0)
 
                 self._result(message, repository)
@@ -126,6 +126,9 @@ class TextSuggestion(Suggestion):
     def message_to_hit(self):
         return self.square.message_to_text
 
+class HotSuggestion(TextSuggestion):
+    pass
+
 class SuggestionRepository(object):
     def __init__(self, discovery):
         self.discovery = discovery
@@ -151,6 +154,7 @@ class SuggestionRepository(object):
 
     def order_and_fetch_suggestions(self, fetch_count):
         previous_suggestions_count = len(self.suggestions)
+        previous_hit_count = sum(1 for suggestion in self.suggestions if suggestion.state == "done")
 
         # order by weight
         self.suggestions = sorted(self.unordered_suggestions.itervalues(), key=lambda response: response.weight, reverse=True)
@@ -160,7 +164,10 @@ class SuggestionRepository(object):
             if response.state == "waiting":
                 response.fetch(self)
 
-        return len(self.suggestions) > previous_suggestions_count
+        # returns True when we have new suggestions and no hits during the call to
+        # order_and_fetch_suggestions
+        return (len(self.suggestions) > previous_suggestions_count and
+                sum(1 for suggestion in self.suggestions if suggestion.state == "done") == previous_hit_count)
 
 class HotCollector(SuggestionRepository):
     def __init__(self, discovery):
@@ -174,7 +181,7 @@ class HotCollector(SuggestionRepository):
 
     def on_hots(self, messages):
         for message in messages:
-            self.add_suggestions(message.candidate, message.payload.suggestions, TextSuggestion)
+            self.add_suggestions(message.candidate, message.payload.suggestions, HotSuggestion)
 
         old_top = self.suggestions[:10]
         self.order_and_fetch_suggestions(10)
