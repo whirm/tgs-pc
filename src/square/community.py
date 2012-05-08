@@ -447,8 +447,11 @@ class PreviewCommunity(SquareBase):
 
     @property
     def dispersy_acceptable_global_time_range(self):
-        # we will accept the full 64 bit global time range
-        return maxsize
+        if self._enable_walker:
+            return super(PreviewCommunity, self).dispersy_acceptable_global_time_range()
+        else:
+            # we will accept the full 64 bit global time range
+            return 2**64-1
 
     @property
     def dispersy_enable_candidate_walker(self):

@@ -2385,12 +2385,18 @@ class Dispersy(Singleton):
                     # verify that the bloom filter is correct
                     binary = bloom_filter.bytes
                     bloom_filter.clear()
-                    counter = 0
-                    for packet, in self._database.execute(u"SELECT sync.packet FROM sync JOIN meta_message ON meta_message.id = sync.meta_message WHERE sync.community = ? AND meta_message.priority > 32 AND sync.undone == 0 AND global_time BETWEEN ? AND ? AND (sync.global_time + ?) % ? = 0",
-                                                          (community.database_id, time_low, community.global_time if time_high == 0 else time_high, offset, modulo)):
-                        bloom_filter.add(str(packet))
-                        counter += 1
-                    assert binary == bloom_filter.bytes, "The returned bloom filter does not match the given range [%d:%d] packets:%d" % (time_low, time_high, counter)
+                    try:
+                        packets = [str(packet) for packet, in self._database.execute(u"SELECT sync.packet FROM sync JOIN meta_message ON meta_message.id = sync.meta_message WHERE sync.community = ? AND meta_message.priority > 32 AND sync.undone == 0 AND global_time BETWEEN ? AND ? AND (sync.global_time + ?) % ? = 0",
+                                                                                     (community.database_id, time_low, community.global_time if time_high == 0 else time_high, offset, modulo))]
+                    except OverflowError:
+                        dprint("time_low:  ", time_low, level="error")
+                        dprint("time_high: ", time_high, level="error")
+                        dprint("2**63 - 1: ", 2**63 - 1, level="error")
+                        dprint("the sqlite3 python module can not handle values 2**63 or larger.  limit time_low and time_high to 2**63-1", exception=True, level="error")
+                        assert False
+
+                    bloom_filter.add_keys(packets)
+                    assert binary == bloom_filter.bytes, "The returned bloom filter does not match the given range [%d:%d] packets:%d" % (time_low, time_high, len(packets))
 
         if __debug__:
             if destination.get_destination_address(self._wan_address) != destination.sock_addr:
@@ -2593,7 +2599,12 @@ ORDER BY meta_message.priority DESC, sync.global_time * meta_message.direction""
                     time_high = payload.time_high if payload.has_time_high else community.global_time
                     packets = []
 
-                    generator = ((str(packet), meta_message_id, str(packet_public_key)) for packet, meta_message_id, packet_public_key in self._database.execute(sql, (payload.time_low, time_high, payload.offset, payload.modulo)))
+                    # 07/05/12 Boudewijn: for an unknown reason values larger than 2^63-1 cause
+                    # overflow exceptions in the sqlite3 wrapper
+                    time_low = min(payload.time_low, 2**63-1)
+                    time_high = min(time_high, 2**63-1)
+
+                    generator = ((str(packet), meta_message_id, str(packet_public_key)) for packet, meta_message_id, packet_public_key in self._database.execute(sql, (time_low, time_high, payload.offset, payload.modulo)))
                     for packet, meta_message_id, packet_public_key in payload.bloom_filter.not_filter(generator):
                         packet_meta = meta_messages.get(meta_message_id, None)
                         if not packet_meta:
@@ -2625,7 +2636,7 @@ ORDER BY meta_message.priority DESC, sync.global_time * meta_message.direction""
 
                     if packets:
                         if __debug__:
-                            dprint("syncing ", len(packets), " packets (", sum(len(packet) for packet in packets), " bytes) over [", payload.time_low, ":", time_high, "] selecting (%", payload.modulo, "+", payload.offset, ") to " , message.candidate)
+                            dprint("syncing ", len(packets), " packets (", sum(len(packet) for packet in packets), " bytes) over [", time_low, ":", time_high, "] selecting (%", payload.modulo, "+", payload.offset, ") to " , message.candidate)
                             self._statistics.outgoing(u"-sync-", sum(len(packet) for packet in packets), len(packets))
                         self._endpoint.send([message.candidate], packets)
 
@@ -2645,9 +2656,15 @@ ORDER BY meta_message.priority DESC, sync.global_time * meta_message.direction""
                     byte_limit = community.dispersy_sync_response_limit
 
                     time_high = payload.time_high if payload.has_time_high else community.global_time
+
+                    # 07/05/12 Boudewijn: for an unknown reason values larger than 2^63-1 cause
+                    # overflow exceptions in the sqlite3 wrapper
+                    time_low = min(payload.time_low, 2**63-1)
+                    time_high = min(time_high, 2**63-1)
+
                     packets = []
 
-                    generator = ((str(packet),) for packet, in self._database.execute(sql, (payload.time_low, time_high, payload.offset, payload.modulo)))
+                    generator = ((str(packet),) for packet, in self._database.execute(sql, (time_low, long(time_high), long(payload.offset), long(payload.modulo))))
                     for packet, in payload.bloom_filter.not_filter(generator):
                         if __debug__:dprint("found missing (", len(packet), " bytes) ", sha1(packet).digest().encode("HEX"))
 
@@ -2660,7 +2677,7 @@ ORDER BY meta_message.priority DESC, sync.global_time * meta_message.direction""
 
                     if packets:
                         if __debug__:
-                            dprint("syncing ", len(packets), " packets (", sum(len(packet) for packet in packets), " bytes) over [", payload.time_low, ":", time_high, "] selecting (%", message.payload.modulo, "+", message.payload.offset, ") to " , message.candidate)
+                            dprint("syncing ", len(packets), " packets (", sum(len(packet) for packet in packets), " bytes) over [", time_low, ":", time_high, "] selecting (%", message.payload.modulo, "+", message.payload.offset, ") to " , message.candidate)
                             self._statistics.outgoing(u"-sync-", sum(len(packet) for packet in packets), len(packets))
                         self._endpoint.send([message.candidate], packets)
 
