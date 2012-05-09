@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 # -*- conding: utf8 -*-
 
-import communication
+#import communication
 import time
 import sys
 
-from dispersy.callback import Callback
-from dispersy.dispersy import Dispersy
-from dispersy.member import Member
-from dispersy.dprint import dprint
-from dispersy.crypto import (ec_generate_key,
-        ec_to_public_bin, ec_to_private_bin)
 
 try:
     from ui.main import Ui_TheGlobalSquare

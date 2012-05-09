@@ -10,16 +10,16 @@ import time
 import sys
 import os
 
-from discovery.community import DiscoveryCommunity
-from square.community import PreviewCommunity, SquareCommunity
-import events
+from tgscore.discovery.community import DiscoveryCommunity
+from tgscore.square.community import PreviewCommunity, SquareCommunity
+from tgscore import events
 
-from dispersy.endpoint import StandaloneEndpoint
-from dispersy.callback import Callback
-from dispersy.dispersy import Dispersy
-from dispersy.member import Member
-from dispersy.dprint import dprint
-from dispersy.crypto import (ec_generate_key,
+from tgscore.dispersy.endpoint import StandaloneEndpoint
+from tgscore.dispersy.callback import Callback
+from tgscore.dispersy.dispersy import Dispersy
+from tgscore.dispersy.member import Member
+from tgscore.dispersy.dprint import dprint
+from tgscore.dispersy.crypto import (ec_generate_key,
         ec_to_public_bin, ec_to_private_bin)
 
 try:
