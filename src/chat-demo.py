@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- conding: utf8 -*-
+# -*- coding: utf-8 -*-
 # tar cvjf chat-demo.tar.bz2 chat-demo --exclude ".svn" --exclude "*pyc" --exclude "*~" --exclude ".backup"
 
 #Disable QString compatibility
@@ -10,7 +10,7 @@ import time
 import sys
 import os
 
-from tgscore.discovery.community import DiscoveryCommunity
+from tgscore.discovery.community import DiscoveryCommunity, SearchCache
 from tgscore.square.community import PreviewCommunity, SquareCommunity
 from tgscore import events
 
@@ -35,7 +35,8 @@ from PyQt4 import QtGui, QtCore
 from threading import Lock
 
 #Local
-from widgets import ChatMessageListItem, MainWin, SquareOverviewListItem, SquareEditDialog, SquareSearchDialog
+from widgets import (ChatMessageListItem, MainWin, SquareOverviewListItem,
+        SquareEditDialog, SquareSearchDialog, MessageSearchDialog, MemberSearchDialog)
 
 #Set up QT as event broker
 events.setEventBrokerFactory(events.qt.createEventBroker)
@@ -50,15 +51,63 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 #214701    +whirm  ok, noted
 #214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
 
-class ChatCore:
-    def __init__(self):
-        self.nick = u"Anon"
-        self.message_references = []
-        self._communities = {}
-        self._communities_listwidgets = {}
-        self._square_search_dialog = None
+#TODO: Separate the TGS stuff (dispersy threads setup et al, internal callbacks...) from the pure UI code and put it in this class:
+class TGS (QtCore.QObject):
+    ##################################
+    #Signals:
+    ##################################
+    memberSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
+    squareSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
+    textSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
 
-    def dispersy(self, callback):
+    ##################################
+    #Slots:
+    ##################################
+    #TODO: Add an arg to add the result list widget/model to support multiple search windows.
+    def startNewMemberSearch(self, search_terms):
+        print "Searching members for:", search_terms
+        self._discovery.simple_member_search(search_terms, self.memberSearchUpdate.emit)
+
+    def startNewSquareSearch(self, search_terms):
+        print "Searching squares for:", search_terms
+        self._discovery.simple_square_search(search_terms, self.squareSearchUpdate.emit)
+
+    def startNewTextSearch(self, search_terms):
+        print "Searching text messages for:", search_terms
+        self._discovery.simple_text_search(search_terms, self.textSearchUpdate.emit)
+
+    ##################################
+    #Public methods:
+    ##################################
+    def setupThreads(self):
+        # start threads
+        callback = Callback()
+        callback.start(name="Dispersy")
+
+        callback.register(self._dispersy, (callback,))
+        if "--simulate" in sys.argv:
+            callback.register(self._DEBUG_SIMULATION)
+        if "--simulate-qt" in sys.argv:
+            callback.register(self._DEBUG_QT_SIMULATION)
+        self.callback = callback
+
+        #pyside:
+        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
+
+    def stopThreads(self):
+        self.callback.stop()
+
+        if self.callback.exception:
+            global exit_exception
+            exit_exception = self.callback.exception
+
+    def createNewSquare(self, square_info):
+        self.callback.register(self._dispersyCreateCommunity, square_info)
+
+    ##################################
+    #Private methods:
+    ##################################
+    def _dispersy(self, callback):
         if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
             workdir = unicode(sys.argv[1])
         else:
@@ -93,7 +142,17 @@ class ChatCore:
             yield 1.0
             community = dispersy.get_community(master.mid)
 
-    def DEBUG_SIMULATION(self):
+
+    def _dispersy_onSearchResult(self, result):
+        print "OnSearchResult", result
+
+    def _dispersyCreateCommunity(self, title, description, avatar, lat, lon, radius):
+        community = SquareCommunity.create_community(self._my_member, self._discovery)
+
+        #TODO: Publish the avatar via swift and set the avatar's hash here
+        community.set_square_info(title, description, '', (int(lat*10**6), int(lon*10**6)), radius)
+
+    def _DEBUG_SIMULATION(self):
         yield 5.0
 
         # user clicked the 'create new square' button
@@ -127,6 +186,86 @@ class ChatCore:
             self._discovery.simple_square_search(u"square test %d" % index, response_func, (now,))
             self._discovery.simple_text_search(u"text test %d" % index, response_func, (now,))
             yield 30.0
+
+    def _DEBUG_QT_SIMULATION(self):
+        yield 5.0
+
+        for index in xrange(999999):
+            # user clicked the 'search' button
+            dprint("NEW QT SEARCH", line=1, force=1)
+            self.onSearchSquareClicked()
+            yield 1
+            self._tgs.startNewSearch("member test $d" % index)
+            #now = time.time()
+            #self._discovery.simple_member_search(u"member test %d" % index, self._tgs.memberSearchUpdate.emit, (now,))
+            #self._discovery.simple_square_search(u"square test %d" % index, response_func, (now,))
+            #self._discovery.simple_text_search(u"text test %d" % index, response_func, (now,))
+            yield 30.0
+
+
+class ChatCore:
+    def __init__(self):
+        self.nick = u"Anon"
+        self.message_references = []
+        self._communities = {}
+        self._communities_listwidgets = {}
+        self._square_search_dialog = None
+
+        self._tgs = TGS()
+
+        self._tgs.memberSearchUpdate.connect(self.onMemberSearchUpdate)
+        self._tgs.squareSearchUpdate.connect(self.onSquareSearchUpdate)
+        self._tgs.textSearchUpdate.connect(self.onTextSearchUpdate)
+
+
+    #Slots:
+    ##################################
+
+    #TODO: Refactor the 3 search functions to 3 small ones an a generic one as they are basically the same.
+    def onMemberSearchUpdate(self, cache, event):
+        #TODO:
+        print "Received member search update"
+        #TODO: Deal with status changes and notify user when search is done.
+        if self._member_search_dialog:
+            self._member_search_dialog.clearResultsList()
+            for suggestion in cache.suggestions:
+                member = suggestion.hit
+                if suggestion.state == 'done':
+                    self._member_search_dialog.addResult(member.alias, member.thumbnail_hash)
+            if event == "finished":
+                self._member_search_dialog.onSearchFinished()
+        else:
+            print "But the search window doesn't exist, dropping it..."
+
+    def onSquareSearchUpdate(self, cache, event):
+        #TODO:
+        print "Received Square search update"
+        #TODO: Deal with status changes and notify user when search is done.
+        if self._square_search_dialog:
+            self._square_search_dialog.clearResultsList()
+            for suggestion in cache.suggestions:
+                square = suggestion.hit
+                if suggestion.state == 'done':
+                    self._square_search_dialog.addResult(square.title, square.description, square.location)
+            if event == "finished":
+                self._square_search_dialog.onSearchFinished()
+        else:
+            print "But the search window doesn't exist, dropping it..."
+
+    def onTextSearchUpdate(self, cache, event):
+        #TODO:
+        print "Received text search update"
+        #TODO: Deal with status changes and notify user when search is done.
+        if self._message_search_dialog:
+            self._message_search_dialog.clearResultsList()
+            for suggestion in cache.suggestions:
+                text = suggestion.hit
+                if suggestion.state == 'done':
+                    self._message_search_dialog.addResult(text.text, text.member, text.square)
+            if event == "finished":
+                self._message_search_dialog.onSearchFinished()
+        else:
+            print "But the search window doesn't exist, dropping it..."
 
     def onTextMessageReceived(self, message):
         #Put the message in the overview list
@@ -217,17 +356,6 @@ class ChatCore:
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
-    def onNewPreviewCommunityCreated(self, square):
-        print "New suggested square created", square
-        if self._square_search_dialog:
-            list_item = SquareOverviewListItem(parent=self._square_search_dialog.results_list, square=square)
-
-            #TODO: Put this on the widget constructor and remove it from here and onNewCommunityCreated
-            square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
-            square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
-        else:
-            print "But the search window doesn't exist, dropping it..."
-
     def onJoinPreviewCommunity(self):
         #TODO: disable the leave/join buttons if no square is selected
         print "Joining a new community!"
@@ -266,10 +394,9 @@ class ChatCore:
         self._square_edit_dialog.show()
 
     def onSquareCreateDialogFinished(self):
-
         square_info = self._square_edit_dialog.getSquareInfo()
 
-        self.callback.register(self._dispersyCreateCommunity, square_info)
+        self._tgs.createNewSquare(square_info)
 
         self._square_edit_dialog = None
         self.mainwin.createSquare_btn.setEnabled(True)
@@ -278,52 +405,36 @@ class ChatCore:
         self.mainwin.search_square_btn.setEnabled(False)
         self._square_search_dialog = SquareSearchDialog()
         self._square_search_dialog.rejected.connect(self.onSquareSearchDialogClosed)
-        self._square_search_dialog.onSearchRequested.connect(self.startNewSearch)
+        self._square_search_dialog.onSearchRequested.connect(self._tgs.startNewSquareSearch)
         self._square_search_dialog.show()
 
     def onSquareSearchDialogClosed(self):
         self.mainwin.search_square_btn.setEnabled(True)
 
-    def startNewSearch(self, search_terms):
-        print "Searching for:", search_terms
-        self.callback.register(self._discovery.keyword_search, (search_terms, self._dispersy_onSearchResult))
+    def onSearchMessageClicked(self):
+        self.mainwin.search_message_btn.setEnabled(False)
+        self._message_search_dialog = MessageSearchDialog()
+        self._message_search_dialog.rejected.connect(self.onMessageSearchDialogClosed)
+        self._message_search_dialog.onSearchRequested.connect(self._tgs.startNewTextSearch)
+        self._message_search_dialog.show()
 
-    def _dispersy_onSearchResult(self, result):
-        print "OnSearchResult", result
+    def onMessageSearchDialogClosed(self):
+        self.mainwin.search_message_btn.setEnabled(True)
 
-    def _dispersyCreateCommunity(self, title, description, avatar, lat, lon, radius):
-        community = SquareCommunity.create_community(self._my_member, self._discovery)
+    def onSearchMemberClicked(self):
+        self.mainwin.search_member_btn.setEnabled(False)
+        self._member_search_dialog = MemberSearchDialog()
+        self._member_search_dialog.rejected.connect(self.onMemberSearchDialogClosed)
+        self._member_search_dialog.onSearchRequested.connect(self._tgs.startNewMemberSearch)
+        self._member_search_dialog.show()
 
-        #TODO: Publish the avatar via swift and set the avatar's hash here
-        community.set_square_info(title, description, '', (int(lat*10**6), int(lon*10**6)), radius)
+    def onMemberSearchDialogClosed(self):
+        self.mainwin.search_member_btn.setEnabled(True)
 
-    def _setupThreads(self):
-
-        # start threads
-        callback = Callback()
-        callback.start(name="Dispersy")
-
-        callback.register(self.dispersy, (callback,))
-        if "--simulate" in sys.argv:
-            callback.register(self.DEBUG_SIMULATION)
-        self.callback = callback
-
-        #pyside:
-        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
-
-    def _stopThreads(self):
-        self.callback.stop()
-
-        if self.callback.exception:
-            global exit_exception
-            exit_exception = self.callback.exception
-
+    ##################################
+    #Public Methods
+    ##################################
     def run(self):
-
-        #while not callback.is_finished:
-        #    print "X", app.processEvents()
-        #    time.sleep(0.01)
-
         #Setup QT main window
         self.app = QtGui.QApplication(sys.argv)
         self.mainwin = MainWin()
@@ -339,22 +450,25 @@ class ChatCore:
         self.mainwin.createSquare_btn.clicked.connect(self.onCreateSquareBtnPushed)
 
         self.mainwin.search_square_btn.clicked.connect(self.onSearchSquareClicked)
+        self.mainwin.search_message_btn.clicked.connect(self.onSearchMessageClicked)
+        self.mainwin.search_member_btn.clicked.connect(self.onSearchMemberClicked)
 
+        #TODO: Refactor this to put it in TGS class
         #Connect global events
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
-        global_events.qt.newPreviewCommunityCreated.connect(
-                                                self.onNewPreviewCommunityCreated)
+        #global_events.qt.newPreviewCommunityCreated.connect(
+        #                                        self.onNewPreviewCommunityCreated)
 
         #Setup dispersy threads
-        self._setupThreads()
+        self._tgs.setupThreads()
 
         #Show the main window
         self.mainwin.show()
         #Start QT's event loop
         self.app.exec_()
 
-        #Destroy dispersy threads
-        self._stopThreads()
+        #Destroy dispersy threads before exiting
+        self._tgs.stopThreads()
 
 if __name__ == "__main__":
     exit_exception = None
