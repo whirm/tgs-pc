@@ -3,6 +3,9 @@
 set -e
 
 cd ui
+rm *.py *.pyc
+touch __init__.py
+
 pyrcc4 resources.qrc -o resources_rc.py
 
 for UI in *.ui ; do
