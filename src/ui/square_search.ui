@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>562</width>
+    <width>593</width>
     <height>571</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Search Global Squares</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
@@ -67,7 +67,11 @@
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="results_list"/>
+        <widget class="QListView" name="results_list">
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
