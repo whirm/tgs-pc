@@ -107,6 +107,9 @@ class TGS (QtCore.QObject):
     def createNewSquare(self, square_info):
         self.callback.register(self._dispersyCreateCommunity, square_info)
 
+    def sendText(self, square, message, media_hash=''):
+        self.callback.register(square.post_text, (message, media_hash))
+
     ##################################
     #Private methods:
     ##################################
@@ -302,7 +305,8 @@ class ChatCore:
             if type(current_item) is SquareOverviewListItem:
                 square = current_item.square
                 #TODO: Add media_hash support, empty string ATM.
-                self.callback.register(square.post_text, (message, ''))
+                media_hash=''
+                self._tgs.sendText(square, message, media_hash)
                 self.mainwin.message_line.clear()
             else:
                 msg_box = QtGui.QMessageBox()
