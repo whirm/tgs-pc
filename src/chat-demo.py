@@ -107,8 +107,11 @@ class TGS (QtCore.QObject):
     def createNewSquare(self, square_info):
         self.callback.register(self._dispersyCreateCommunity, square_info)
 
-    def sendText(self, square, message, media_hash=''):
-        self.callback.register(square.post_text, (message, media_hash))
+    def sendText(self, community, message, media_hash=''):
+        self.callback.register(community.post_text, (message, media_hash))
+
+    def setMemberInfo(self, community, nick, thumbnail_hash=''):
+        self.callback.register(community.set_my_member_info, (nick,thumbnail_hash))
 
     ##################################
     #Private methods:
@@ -291,7 +294,8 @@ class ChatCore:
         if nick and nick != self.nick:
             for community in self._communities.itervalues():
                 #TODO: Set thumbnail info (setting an empty string ATM)
-                self.callback.register(community.set_my_member_info, (nick,''))
+                thumbnail = ''
+                self._tgs.setMemberInfo(community, nick, thumbnail)
             self.nick = nick
         else:
             print "Same or empty nick, doing nothing"
