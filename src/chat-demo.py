@@ -76,6 +76,9 @@ class TGS (QtCore.QObject):
         print "Searching text messages for:", search_terms
         self._discovery.simple_text_search(search_terms, self.textSearchUpdate.emit)
 
+    def joinSquare(self, square):
+        self.callback.register(square.join_square)
+
     ##################################
     #Public methods:
     ##################################
@@ -246,7 +249,7 @@ class ChatCore:
             for suggestion in cache.suggestions:
                 square = suggestion.hit
                 if suggestion.state == 'done':
-                    self._square_search_dialog.addResult(square.title, square.description, square.location)
+                    self._square_search_dialog.addResult(square)
             if event == "finished":
                 self._square_search_dialog.onSearchFinished()
         else:
@@ -356,20 +359,10 @@ class ChatCore:
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
-    def onJoinPreviewCommunity(self):
+    def onJoinPreviewCommunity(self, community):
         #TODO: disable the leave/join buttons if no square is selected
         print "Joining a new community!"
-        #Get currently selected community
-        current_item = self.mainwin.suggested_squares_list.currentItem()
-        if type(current_item) is SquareOverviewListItem:
-            square = current_item.square
-            self.callback.register(square.join_square)
-            row = self.mainwin.suggested_squares_list.currentRow()
-            self.mainwin.suggested_squares_list.takeItem(row)
-        else:
-            msg_box = QtGui.QMessageBox()
-            msg_box.setText("Please, select which square you want to join from the bottom-left list first.")
-            msg_box.exec_()
+        self.callback.register(community.join_square)
 
     def onLeaveCommunity(self):
         print "leaving community!"
@@ -406,6 +399,7 @@ class ChatCore:
         self._square_search_dialog = SquareSearchDialog()
         self._square_search_dialog.rejected.connect(self.onSquareSearchDialogClosed)
         self._square_search_dialog.onSearchRequested.connect(self._tgs.startNewSquareSearch)
+        self._square_search_dialog.onJoinSquareRequested.connect(self._tgs.joinSquare)
         self._square_search_dialog.show()
 
     def onSquareSearchDialogClosed(self):
