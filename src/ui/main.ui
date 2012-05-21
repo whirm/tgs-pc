@@ -48,9 +48,6 @@
         <property name="checkable">
          <bool>true</bool>
         </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
         <property name="flat">
          <bool>true</bool>
         </property>
@@ -405,7 +402,7 @@
      </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QGroupBox" name="groupBox">
+     <widget class="QGroupBox" name="tools_grp">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -704,7 +701,7 @@
   <connection>
    <sender>settings_btn</sender>
    <signal>toggled(bool)</signal>
-   <receiver>groupBox</receiver>
+   <receiver>tools_grp</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">

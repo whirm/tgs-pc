@@ -455,6 +455,9 @@ class ChatCore:
         self.mainwin.search_message_btn.clicked.connect(self.onSearchMessageClicked)
         self.mainwin.search_member_btn.clicked.connect(self.onSearchMemberClicked)
 
+        #Hide the tools panel
+        self.mainwin.tools_grp.hide()
+
         #TODO: Refactor this to put it in TGS class
         #Connect global events
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
