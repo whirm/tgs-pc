@@ -49,9 +49,9 @@ class MemberSearchDialog(QtGui.QDialog, Ui_MemberSearchDialog):
 
     def onSearchReady(self):
         if self.search_line.text():
-            self.onSearchRequested.emit(self.search_line.text())
             self.search_btn.setDisabled(True)
             self.search_line.setDisabled(True)
+            self.onSearchRequested.emit(self.search_line.text())
 
     def addResult(self, alias, thumbnail_hash):
         self._model.insertRow(0)

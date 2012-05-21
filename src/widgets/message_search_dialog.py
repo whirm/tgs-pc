@@ -57,9 +57,9 @@ class MessageSearchDialog(QtGui.QDialog, Ui_MessageSearchDialog):
 
     def onSearchReady(self):
         if self.search_line.text():
-            self.onSearchRequested.emit(self.search_line.text())
             self.search_btn.setDisabled(True)
             self.search_line.setDisabled(True)
+            self.onSearchRequested.emit(self.search_line.text())
 
     def addResult(self, text, member, square):
         self._model.insertRow(0)
