@@ -3,7 +3,7 @@
 set -e
 
 cd ui
-rm *.py *.pyc
+rm -f *.py *.pyc
 touch __init__.py
 
 pyrcc4 resources.qrc -o resources_rc.py
