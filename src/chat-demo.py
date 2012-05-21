@@ -151,7 +151,7 @@ class TGS (QtCore.QObject):
 
         # load squares
         for master in SquareCommunity.get_master_members():
-            yield 1.0
+            yield 0.1
             community = dispersy.get_community(master.mid)
 
 
