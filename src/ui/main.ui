@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>538</width>
+    <width>568</width>
     <height>594</height>
    </rect>
   </property>
@@ -14,9 +14,94 @@
    <string>TheGlobalSquare</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <item>
+   <layout class="QGridLayout" name="gridLayout_4">
+    <item row="2" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetFixedSize</enum>
+      </property>
+      <item>
+       <widget class="QPushButton" name="settings_btn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>60</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="text">
+         <string notr="true"/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <selectedon>:/main/configure.png</selectedon>
+         </iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Message:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="message_line">
+        <property name="maxLength">
+         <number>200</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="message_send_btn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>46</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Send</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="0">
      <widget class="QSplitter" name="splitter">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>8</verstretch>
+       </sizepolicy>
+      </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -131,7 +216,7 @@
           <widget class="QWidget" name="layoutWidget_2">
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <property name="sizeConstraint">
-             <enum>QLayout::SetMaximumSize</enum>
+             <enum>QLayout::SetDefaultConstraint</enum>
             </property>
             <item>
              <widget class="QPushButton" name="leave_square_btn">
@@ -226,32 +311,6 @@
                 </property>
                </widget>
               </item>
-              <item>
-               <widget class="QPushButton" name="search_square_btn">
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>23</height>
-                 </size>
-                </property>
-                <property name="whatsThis">
-                 <string>Search for new squares to join</string>
-                </property>
-                <property name="text">
-                 <string notr="true"/>
-                </property>
-                <property name="icon">
-                 <iconset resource="resources.qrc">
-                  <normaloff>:/main/edit-find.png</normaloff>:/main/edit-find.png</iconset>
-                </property>
-                <property name="iconSize">
-                 <size>
-                  <width>16</width>
-                  <height>16</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
              </layout>
             </item>
            </layout>
@@ -280,7 +339,7 @@
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
+             <verstretch>10</verstretch>
             </sizepolicy>
            </property>
            <property name="minimumSize">
@@ -288,6 +347,9 @@
              <width>0</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
            </property>
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
@@ -342,12 +404,12 @@
       </widget>
      </widget>
     </item>
-    <item>
+    <item row="1" column="0">
      <widget class="QGroupBox" name="groupBox">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
         <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
+        <verstretch>1</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
@@ -359,7 +421,7 @@
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>300</height>
+        <height>400</height>
        </size>
       </property>
       <property name="title">
@@ -371,9 +433,21 @@
       <property name="checkable">
        <bool>false</bool>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <property name="margin">
+      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
         <number>4</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
        </property>
        <item>
         <layout class="QGridLayout" name="gridLayout">
@@ -466,13 +540,19 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2" rowspan="2">
+         <item row="0" column="2" rowspan="2" alignment="Qt::AlignLeft">
           <widget class="QGroupBox" name="groupBox_3">
            <property name="title">
-            <string>Tools</string>
+            <string>Search</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_2">
-            <item row="3" column="0">
+            <property name="margin">
+             <number>2</number>
+            </property>
+            <property name="spacing">
+             <number>2</number>
+            </property>
+            <item row="4" column="0">
              <spacer name="verticalSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -485,15 +565,8 @@
               </property>
              </spacer>
             </item>
-            <item row="0" column="0">
-             <widget class="QPushButton" name="createSquare_btn">
-              <property name="text">
-               <string>New square</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QPushButton" name="search_message_btn">
+            <item row="1" column="0" colspan="2">
+             <widget class="QPushButton" name="search_member_btn">
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
@@ -504,7 +577,7 @@
                <string>Search for new squares to join</string>
               </property>
               <property name="text">
-               <string notr="true">Search messages</string>
+               <string notr="true">Users</string>
               </property>
               <property name="icon">
                <iconset resource="resources.qrc">
@@ -518,8 +591,8 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="search_member_btn">
+            <item row="0" column="0" colspan="2">
+             <widget class="QPushButton" name="search_square_btn">
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
@@ -530,7 +603,33 @@
                <string>Search for new squares to join</string>
               </property>
               <property name="text">
-               <string notr="true">Search users</string>
+               <string notr="true">Squares</string>
+              </property>
+              <property name="icon">
+               <iconset resource="resources.qrc">
+                <normaloff>:/main/edit-find.png</normaloff>:/main/edit-find.png</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="search_message_btn">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>23</height>
+               </size>
+              </property>
+              <property name="whatsThis">
+               <string>Search for new squares to join</string>
+              </property>
+              <property name="text">
+               <string notr="true">Messages</string>
               </property>
               <property name="icon">
                <iconset resource="resources.qrc">
@@ -547,7 +646,7 @@
            </layout>
           </widget>
          </item>
-         <item row="0" column="3" rowspan="2">
+         <item row="0" column="4" rowspan="2">
           <spacer name="horizontalSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -560,125 +659,44 @@
            </property>
           </spacer>
          </item>
+         <item row="0" column="3" rowspan="2">
+          <widget class="QGroupBox" name="groupBox_4">
+           <property name="title">
+            <string>Tools</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QPushButton" name="createSquare_btn">
+              <property name="text">
+               <string>New square</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
         </layout>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Debug/Demo stuff</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <item>
-           <widget class="QPushButton" name="showSquare_btn">
-            <property name="text">
-             <string>Show square window</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="verticalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
        </item>
       </layout>
      </widget>
     </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetFixedSize</enum>
-      </property>
-      <item>
-       <widget class="QPushButton" name="settings_btn">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>60</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true"/>
-        </property>
-        <property name="text">
-         <string notr="true"/>
-        </property>
-        <property name="icon">
-         <iconset>
-          <selectedon>:/main/configure.png</selectedon>
-         </iconset>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-        <property name="flat">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Message:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="message_line">
-        <property name="maxLength">
-         <number>200</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="message_send_btn">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>46</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Send</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>message_line</tabstop>
+  <tabstop>settings_btn</tabstop>
+  <tabstop>squares_list</tabstop>
+  <tabstop>leave_square_btn</tabstop>
+  <tabstop>suggested_squares_list</tabstop>
+  <tabstop>join_square_btn</tabstop>
+  <tabstop>nick_line</tabstop>
+  <tabstop>avatar_btn</tabstop>
+  <tabstop>search_square_btn</tabstop>
+  <tabstop>search_member_btn</tabstop>
+  <tabstop>search_message_btn</tabstop>
+  <tabstop>createSquare_btn</tabstop>
+ </tabstops>
  <resources>
   <include location="resources.qrc"/>
  </resources>
