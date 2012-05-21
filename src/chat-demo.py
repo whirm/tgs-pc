@@ -79,6 +79,9 @@ class TGS (QtCore.QObject):
     def joinSquare(self, square):
         self.callback.register(square.join_square)
 
+    def leaveSquare(self, square):
+        self.callback.register(square.leave_square)
+
     ##################################
     #Public methods:
     ##################################
@@ -378,7 +381,7 @@ class ChatCore:
         current_item = self.mainwin.squares_list.currentItem()
         if type(current_item) is SquareOverviewListItem:
             square = current_item.square
-            self.callback.register(square.leave_square)
+            self._tgs.leaveSquare(square)
             row = self.mainwin.squares_list.currentRow()
             self.mainwin.squares_list.takeItem(row)
             #Remove the square reference from the squares list
