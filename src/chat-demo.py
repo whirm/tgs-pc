@@ -97,9 +97,6 @@ class TGS (QtCore.QObject):
             callback.register(self._DEBUG_QT_SIMULATION)
         self.callback = callback
 
-        #pyside:
-        #community.textMessageReceived.connect(self.onTextMessageReceived, QtCore.Qt.ConnectionType.DirectConnection)
-
     def stopThreads(self):
         self.callback.stop()
 
