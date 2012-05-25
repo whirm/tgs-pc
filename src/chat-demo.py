@@ -56,6 +56,12 @@ class TGS (QtCore.QObject):
     squareSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
     textSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
 
+    def __init__(self):
+        super(TGS, self).__init__()
+        self.callback = None
+        self._discovery = None
+        self._my_member = None
+
     ##################################
     #Slots:
     ##################################
@@ -145,7 +151,7 @@ class TGS (QtCore.QObject):
         # load squares
         for master in SquareCommunity.get_master_members():
             yield 0.1
-            community = dispersy.get_community(master.mid)
+            dispersy.get_community(master.mid)
 
 
     def _dispersy_onSearchResult(self, result):
@@ -303,7 +309,7 @@ class ChatCore:
             if type(current_item) is SquareOverviewListItem:
                 square = current_item.square
                 #TODO: Add media_hash support, empty string ATM.
-                media_hash=''
+                media_hash = ''
                 self._tgs.sendText(square, message, media_hash)
                 self.mainwin.message_line.clear()
             else:
@@ -317,10 +323,6 @@ class ChatCore:
         #TODO: We need to update the squares list here.
         print "New square created", square
         #TODO: We will switch to an MVC widget soon, so we can sort, filter, update, etc easily.
-
-        #Set the member info stuff for this community
-        #TODO: Set thumbnail info (setting an empty string ATM)
-        # self.callback.register(square.set_my_member_info, (self.nick,''))
 
         list_item = SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
         item_index = self.mainwin.squares_list.row(list_item)
