@@ -460,7 +460,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Nick:</string>
+            <string>Alias:</string>
            </property>
           </widget>
          </item>

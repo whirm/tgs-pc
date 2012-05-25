@@ -22,17 +22,11 @@ from tgscore.dispersy.dprint import dprint
 from tgscore.dispersy.crypto import (ec_generate_key,
         ec_to_public_bin, ec_to_private_bin)
 
-try:
-    from ui.main import Ui_TheGlobalSquare
-except (ImportError):
-    print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
-    sys.exit()
+
+from configobj import ConfigObj
 
 #from PySide import QtGui, QtCore
 from PyQt4 import QtGui, QtCore
-
-#Python
-from threading import Lock
 
 #Local
 from widgets import (ChatMessageListItem, MainWin, SquareOverviewListItem,
@@ -45,6 +39,8 @@ global_events = events.qt.createEventBroker(None)
 #Die with ^C
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+CONFIG_FILE_NAME='tgs.conf'
 
 #TODO: Implement the hot communities list:
 #214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
@@ -110,8 +106,8 @@ class TGS (QtCore.QObject):
     def sendText(self, community, message, media_hash=''):
         self.callback.register(community.post_text, (message, media_hash))
 
-    def setMemberInfo(self, community, nick, thumbnail_hash=''):
-        self.callback.register(community.set_my_member_info, (nick,thumbnail_hash))
+    def setMemberInfo(self, community, alias, thumbnail_hash=''):
+        self.callback.register(community.set_my_member_info, (alias,thumbnail_hash))
 
     ##################################
     #Private methods:
@@ -214,7 +210,6 @@ class TGS (QtCore.QObject):
 
 class ChatCore:
     def __init__(self):
-        self.nick = u"Anon"
         self.message_references = []
         self._communities = {}
         self._communities_listwidgets = {}
@@ -289,19 +284,18 @@ class ChatCore:
         ChatMessageListItem(parent=square_list_widget, message=message)
 
     def onNickChanged(self, *argv, **kwargs):
-        nick = self.mainwin.nick_line.text()
-        print "Nick changed to:", nick
-        if nick and nick != self.nick:
-            for community in self._communities.itervalues():
-                #TODO: Set thumbnail info (setting an empty string ATM)
-                thumbnail = ''
-                self._tgs.setMemberInfo(community, nick, thumbnail)
-            self.nick = nick
+        alias = self.mainwin.nick_line.text()
+        print "Alias changed to:", alias
+        if alias and alias != self._config['Member']['Alias']:
+            self._config['Member']['Alias'] = alias
+            self._propagateMemberInfoToAll()
+            self._config.write()
         else:
             print "Same or empty nick, doing nothing"
 
     def onMessageReadyToSend(self):
         message = self.mainwin.message_line.text()
+        #TODO: Check if the community where we are sending the message has our member info up to date!!
         if message:
             print "Sending message: ", message
             #Get currently selected community
@@ -361,7 +355,10 @@ class ChatCore:
 
         self._communities_listwidgets[square.cid]=list_widget
 
-        self._communities[square.cid]=square
+        self._communities[square.cid] = square
+
+        #Set member info for this square
+        self._setMemberInfo(square)
 
         #TODO: Put this on the widget constructor, and remove it from here and onNewPreviewCommunityCreated
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
@@ -370,7 +367,7 @@ class ChatCore:
     def onJoinPreviewCommunity(self, community):
         #TODO: disable the leave/join buttons if no square is selected
         print "Joining a new community!"
-        self.callback.register(community.join_square)
+        self._tgs.joinSquare(community)
 
     def onLeaveCommunity(self):
         print "leaving community!"
@@ -437,9 +434,16 @@ class ChatCore:
     #Public Methods
     ##################################
     def run(self):
+        #Read config file
+        self._config = self._getConfig()
+
         #Setup QT main window
         self.app = QtGui.QApplication(sys.argv)
         self.mainwin = MainWin()
+
+        #Set configurable values
+        #TODO: Setup Thumbnail too
+        self.mainwin.nick_line.setText(self._config['Member']['Alias'])
 
         #Connect main window signals
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
@@ -474,6 +478,49 @@ class ChatCore:
 
         #Destroy dispersy threads before exiting
         self._tgs.stopThreads()
+
+    ##################################
+    #Private Methods
+    ##################################
+    def _getConfig(self):
+        current_os = sys.platform
+        if current_os in ('win32','cygwin'):
+            config_path = os.path.join(os.environ['AppData'], 'TheGlobalSquare')
+        elif current_os.startswith('linux'):
+            config_path = os.path.join(os.environ['HOME'], '.config', 'TheGlobalSquare')
+        elif current_os == 'darwin':
+            config_path = os.path.join('Users', os.environ['USER'], 'Library', 'Preferences', 'TheGlobalSquare')
+        else:
+            print "I don't know where to store my config in this operating system! (%s)\nExiting..." % current_os
+            sys.exit(10)
+
+        #Create app data dir if it doesn't exist
+        if not os.path.exists(config_path):
+            os.makedirs(config_path)
+
+        config_file_path = os.path.join(config_path, CONFIG_FILE_NAME)
+
+        config = ConfigObj(config_file_path, encoding='utf-8')
+
+        if not os.path.exists(config_file_path):
+            #Set default values
+            config['Member'] = {
+                'Alias': 'Anon',
+                'Thumbnail': ''
+                }
+            config.write()
+
+        return config
+
+    def _propagateMemberInfoToAll(self):
+        for community in self._communities.itervalues():
+            self._setMemberInfo(community)
+
+    def _setMemberInfo(self, community):
+        alias = self._config['Member']['Alias']
+        thumbnail = str(self._config['Member']['Thumbnail'])
+        self._tgs.setMemberInfo(community, alias, thumbnail)
+
 
 if __name__ == "__main__":
     exit_exception = None
