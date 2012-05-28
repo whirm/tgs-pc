@@ -2,6 +2,8 @@
 *.swp
 *~
 *.bak
+\#*\#
+\.\#*
 /src/ui/*.py
 /src/ui/resources_rc.py
 /src/sqlite
