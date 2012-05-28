@@ -541,15 +541,18 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>64</width>
-             <height>64</height>
+             <width>66</width>
+             <height>66</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>64</width>
-             <height>64</height>
+             <width>66</width>
+             <height>66</height>
             </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
            </property>
            <property name="text">
             <string notr="true"/>

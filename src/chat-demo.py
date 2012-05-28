@@ -432,6 +432,24 @@ class ChatCore:
     def onMemberSearchDialogClosed(self):
         self.mainwin.search_member_btn.setEnabled(True)
 
+    def onThumbnailButtonPressed(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(self.mainwin,
+                    "Open Image", "", "Image Files (*.png *.jpg *.bmp *.gif)"
+        )
+        image = QtGui.QPixmap(fileName)
+        if image.width() > image.height():
+            image = image.scaledToWidth(64)
+        else:
+            image = image.scaledToHeight(64)
+
+        self.mainwin.avatar_btn.setIcon(QtGui.QIcon(image))
+        thumb_data = QtCore.QBuffer()
+        thumb_data.open(thumb_data.ReadWrite)
+        image.save(thumb_data, 'PNG')
+
+        self._config['Member']['Thumbnail'] = thumb_data.buffer().toBase64()
+        self._config.write()
+
     ##################################
     #Public Methods
     ##################################
@@ -444,11 +462,17 @@ class ChatCore:
         self.mainwin = MainWin()
 
         #Set configurable values
-        #TODO: Setup Thumbnail too
         self.mainwin.nick_line.setText(self._config['Member']['Alias'])
+        thumb_data = QtCore.QBuffer()
+        thumb_data.open(thumb_data.ReadWrite)
+        thumb_bytes = QtCore.QByteArray.fromBase64(self._config['Member']['Thumbnail'])
+        pixmap = QtGui.QPixmap()
+        pixmap.loadFromData(thumb_bytes, 'PNG')
+        self.mainwin.avatar_btn.setIcon(QtGui.QIcon(pixmap))
 
         #Connect main window signals
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)
+        self.mainwin.avatar_btn.clicked.connect(self.onThumbnailButtonPressed)
         self.mainwin.message_line.returnPressed.connect(
                                                 self.onMessageReadyToSend)
         self.mainwin.message_send_btn.clicked.connect(
@@ -515,12 +539,13 @@ class ChatCore:
         return config
 
     def _propagateMemberInfoToAll(self):
+        #TODO: Check if the community has up to date info before sending unnecessary updates
         for community in self._communities.itervalues():
             self._setMemberInfo(community)
 
     def _setMemberInfo(self, community):
         alias = self._config['Member']['Alias']
-        thumbnail = str(self._config['Member']['Thumbnail'])
+        thumbnail = '' #str(self._config['Member']['Thumbnail']) #TODO: Setup this correctly when swift gets integrated
         self._tgs.setMemberInfo(community, alias, thumbnail)
 
 
