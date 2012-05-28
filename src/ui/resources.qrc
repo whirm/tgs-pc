@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="main">
+    <file>mail-attachment.png</file>
     <file>edit-find.png</file>
     <file>face-smile-big.png</file>
     <file>configure.png</file>
