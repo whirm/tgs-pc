@@ -435,7 +435,7 @@ class ChatCore:
 
     def onThumbnailButtonPressed(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self.mainwin,
-                    "Open Image", "", "Image Files (*.png *.jpg *.bmp *.gif)"
+                    "Select your avatar", "", "Image Files (*.png *.jpg *.bmp *.gif)"
         )
         image = QtGui.QPixmap(fileName)
         if image.width() > image.height():
