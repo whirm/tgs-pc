@@ -220,6 +220,7 @@ class ChatCore:
         self._communities = {}
         self._communities_listwidgets = {}
         self._square_search_dialog = None
+        self._message_attachment = None
 
         self._tgs = TGS()
 
@@ -450,6 +451,15 @@ class ChatCore:
         self._config['Member']['Thumbnail'] = thumb_data.buffer().toBase64()
         self._config.write()
 
+    def onAttachButtonToggled(self, status):
+        if status:
+            self._message_attachment = QtGui.QFileDialog.getOpenFileName(self.mainwin,
+                                                    "Attach file to message", "", "")
+            self.mainwin.attach_btn.setToolTip(self._message_attachment)
+        else:
+            self._message_attachment = None
+            self.mainwin.attach_btn.setToolTip('')
+
     ##################################
     #Public Methods
     ##################################
@@ -477,6 +487,7 @@ class ChatCore:
                                                 self.onMessageReadyToSend)
         self.mainwin.message_send_btn.clicked.connect(
                                                 self.onMessageReadyToSend)
+        self.mainwin.attach_btn.toggled.connect(self.onAttachButtonToggled)
         self.mainwin.join_square_btn.clicked.connect(self.onJoinPreviewCommunity)
         self.mainwin.leave_square_btn.clicked.connect(self.onLeaveCommunity)
         self.mainwin.createSquare_btn.clicked.connect(self.onCreateSquareBtnPushed)
