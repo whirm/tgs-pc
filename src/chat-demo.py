@@ -48,7 +48,7 @@ CONFIG_FILE_NAME='tgs.conf'
 #214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
 
 #TODO: Separate the TGS stuff (dispersy threads setup et al, internal callbacks...) from the pure UI code and put it in this class:
-class TGS (QtCore.QObject):
+class TGS(QtCore.QObject):
     ##################################
     #Signals:
     ##################################
