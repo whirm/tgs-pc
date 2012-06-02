@@ -232,7 +232,7 @@ class ChatCore:
     #Slots:
     ##################################
 
-    #TODO: Refactor the 3 search functions to 3 small ones an a generic one as they are basically the same.
+    #TODO: Refactor the 3 search functions to 3 small ones and a generic one as they are basically the same.
     def onMemberSearchUpdate(self, cache, event):
         #TODO:
         print "Received member search update"
