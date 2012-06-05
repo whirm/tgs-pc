@@ -1,0 +1,2 @@
+include tgs README
+#recursive-include tgs_pc *.py
