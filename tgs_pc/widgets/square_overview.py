@@ -25,7 +25,7 @@ class SquareOverviewListItem(QtGui.QListWidgetItem):
         self.widget = SquareOverviewWidget(title=square.title, *argv, **kwargs)
         self.setSizeHint(self.widget.minimumSizeHint())
 
-        self.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsSelectable + QtCore.Qt.ItemIsEnabled))
+        self.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled))
 
         parent.addItem(self)
         parent.setItemWidget(self, self.widget)
