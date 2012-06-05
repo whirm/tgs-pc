@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- conding: utf8 -*-
+# -*- coding: utf-8 -*-
 
 #import communication
 import time
