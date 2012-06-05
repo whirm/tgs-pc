@@ -42,7 +42,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 CONFIG_FILE_NAME='tgs.conf'
 
-#TODO: Implement the hot communities list:
+#TODO: Implement the hot communities list:X
 #214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
 #214701    +whirm  ok, noted
 #214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
@@ -559,11 +559,3 @@ class ChatCore:
         alias = self._config['Member']['Alias']
         thumbnail = '' #str(self._config['Member']['Thumbnail']) #TODO: Setup this correctly when swift gets integrated
         self._tgs.setMemberInfo(community, alias, thumbnail)
-
-
-if __name__ == "__main__":
-    exit_exception = None
-    chat = ChatCore()
-    chat.run()
-    if exit_exception:
-        raise exit_exception
