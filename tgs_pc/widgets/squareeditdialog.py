@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- conding: utf8 -*-
+# -*- coding: utf-8 -*-
 
 #Pyqt
 from PyQt4.QtCore import pyqtSignal
