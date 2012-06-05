@@ -4,9 +4,12 @@
 
 from ..ui.square_search import Ui_SquareSearchDialog
 
-from PyQt4 import QtGui, QtCore
-
-#Local
+#QT
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 #TODO: Set item delegate (already designed, need to refactor it from the old item-based code)
 
@@ -19,8 +22,8 @@ TITLE, DESCRIPTION, LOCATION, SQUARE = range(COLUMNS)
 #TODO: Refactor this into a generic search dialog class and then make the Search dialogs inherit from it
 
 class SquareSearchDialog(QtGui.QDialog, Ui_SquareSearchDialog):
-    onSearchRequested = QtCore.pyqtSignal(unicode)
-    onJoinSquareRequested = QtCore.pyqtSignal(object)
+    onSearchRequested = QtCore.Signal(unicode)
+    onJoinSquareRequested = QtCore.Signal(object)
 
     def __init__(self, *argv, **kwargs):
         super(SquareSearchDialog, self).__init__(*argv, **kwargs)

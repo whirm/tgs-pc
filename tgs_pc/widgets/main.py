@@ -12,7 +12,11 @@ except (ImportError):
     print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
     sys.exit()
 
-from PyQt4 import QtGui, QtCore
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 __all__=['MainWin',]
 

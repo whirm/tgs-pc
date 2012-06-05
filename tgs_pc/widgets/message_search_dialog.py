@@ -3,7 +3,12 @@
 
 from ..ui.message_search import Ui_MessageSearchDialog
 
-from PyQt4 import QtGui, QtCore
+#QT
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 #Local
 from . import ChatMessageWidget
@@ -14,7 +19,7 @@ __all__=['MessageSearchDialog',]
 TEXT, MEMBER, SQUARE = range(3)
 
 class MessageSearchDialog(QtGui.QDialog, Ui_MessageSearchDialog):
-    onSearchRequested = QtCore.pyqtSignal(unicode)
+    onSearchRequested = QtCore.Signal(unicode)
     def __init__(self, *argv, **kwargs):
         super(MessageSearchDialog, self).__init__(*argv, **kwargs)
         self.setupUi(self)

@@ -3,7 +3,12 @@
 
 from ..ui.member_search import Ui_MemberSearchDialog
 
-from PyQt4 import QtGui, QtCore
+#QT
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 #Local
 from member_overview_widget import MemberOverviewWidget
@@ -14,7 +19,7 @@ __all__=['MemberSearchDialog',]
 ALIAS, THUMBNAIL_HASH = range(2)
 
 class MemberSearchDialog(QtGui.QDialog, Ui_MemberSearchDialog):
-    onSearchRequested = QtCore.pyqtSignal(unicode)
+    onSearchRequested = QtCore.Signal(unicode)
     def __init__(self, *argv, **kwargs):
         super(MemberSearchDialog, self).__init__(*argv, **kwargs)
         self.setupUi(self)

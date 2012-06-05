@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#Pyqt
-from PyQt4.QtCore import pyqtSignal
+from ..ui.squareeditdialog import Ui_SquareEditDialog
 
+#QT
 try:
-    from ui.squareeditdialog import Ui_SquareEditDialog
-except (ImportError):
-    print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
-    import sys
-    sys.exit()
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
-from PyQt4 import QtGui
 
 __all__=['SquareEditDialog',]
 
 class SquareEditDialog(QtGui.QDialog, Ui_SquareEditDialog):
-    squareInfoReady = pyqtSignal()
+    squareInfoReady = QtCore.Signal()
     #TODO: Put a char counter to both the title and the description
     #The description sould be less than 1024 bytes when encoded in utf-8
     #The title should be less than 256 when idem

@@ -25,8 +25,11 @@ from tgscore.dispersy.crypto import (ec_generate_key,
 
 from configobj import ConfigObj
 
-#from PySide import QtGui, QtCore
-from PyQt4 import QtGui, QtCore
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 #Local
 from widgets import (ChatMessageListItem, MainWin, SquareOverviewListItem,
@@ -52,9 +55,9 @@ class TGS(QtCore.QObject):
     ##################################
     #Signals:
     ##################################
-    memberSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
-    squareSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
-    textSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
+    memberSearchUpdate = QtCore.Signal(SearchCache, 'QString')
+    squareSearchUpdate = QtCore.Signal(SearchCache, 'QString')
+    textSearchUpdate = QtCore.Signal(SearchCache, 'QString')
 
     def __init__(self, workdir):
         super(TGS, self).__init__()
@@ -427,10 +430,13 @@ class ChatCore:
         self.mainwin.search_member_btn.setEnabled(True)
 
     def onThumbnailButtonPressed(self):
-        fileName = QtGui.QFileDialog.getOpenFileName(self.mainwin,
+        file_name = QtGui.QFileDialog.getOpenFileName(self.mainwin,
                     "Select your avatar", "", "Image Files (*.png *.jpg *.bmp *.gif)"
         )
-        image = QtGui.QPixmap(fileName)
+        #TODO: Temporary hack while we support both pyside and pyqt4
+        if type(file_name) is tuple:
+            file_name = file_name[0]
+        image = QtGui.QPixmap(file_name)
         if image.width() > image.height():
             image = image.scaledToWidth(64)
         else:
@@ -444,11 +450,18 @@ class ChatCore:
         self._config['Member']['Thumbnail'] = thumb_data.buffer().toBase64()
         self._config.write()
 
-    def onAttachButtonToggled(self, status):
-        if status:
+    def onAttachButtonToggled(self, enabled):
+        if enabled:
             self._message_attachment = QtGui.QFileDialog.getOpenFileName(self.mainwin,
                                                     "Attach file to message", "", "")
-            self.mainwin.attach_btn.setToolTip(self._message_attachment)
+            #TODO: Temporary hack while we support both pyside and pyqt4
+            if type(self._message_attachment) is tuple:
+                self._message_attachment = self._message_attachment[0]
+
+            if self._message_attachment:
+                self.mainwin.attach_btn.setToolTip(self._message_attachment)
+            else:
+                self.mainwin.attach_btn.toggle()
         else:
             self._message_attachment = None
             self.mainwin.attach_btn.setToolTip('')
@@ -473,12 +486,12 @@ class ChatCore:
 
         #Set configurable values
         self.mainwin.nick_line.setText(self._config['Member']['Alias'])
-        thumb_data = QtCore.QBuffer()
-        thumb_data.open(thumb_data.ReadWrite)
-        thumb_bytes = QtCore.QByteArray.fromBase64(self._config['Member']['Thumbnail'])
-        pixmap = QtGui.QPixmap()
-        pixmap.loadFromData(thumb_bytes, 'PNG')
-        self.mainwin.avatar_btn.setIcon(QtGui.QIcon(pixmap))
+        if self._config['Member']['Thumbnail']:
+            b64_data = str(self._config['Member']['Thumbnail'])
+            thumb_bytes = QtCore.QByteArray.fromBase64(b64_data)
+            pixmap = QtGui.QPixmap()
+            pixmap.loadFromData(thumb_bytes, 'PNG')
+            self.mainwin.avatar_btn.setIcon(QtGui.QIcon(pixmap))
 
         #Connect main window signals
         self.mainwin.nick_line.editingFinished.connect(self.onNickChanged)

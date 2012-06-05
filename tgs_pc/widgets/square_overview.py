@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 #QT
-from PyQt4.QtGui import QWidget, QPixmap, QListWidgetItem
-from PyQt4.QtCore import QSize, Qt
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 #Python builtin
 from time import strftime, localtime
@@ -14,15 +17,15 @@ from ..ui.squareoverview import Ui_SquareOverview
 __all__ = ['SquareOverviewWidget', 'SquareOverviewListItem']
 
 
-class SquareOverviewListItem(QListWidgetItem):
+class SquareOverviewListItem(QtGui.QListWidgetItem):
     def __init__(self, parent, square, *argv, **kwargs):
-        super(SquareOverviewListItem, self).__init__(type=QListWidgetItem.UserType)
+        super(SquareOverviewListItem, self).__init__(type=QtGui.QListWidgetItem.UserType)
 
         self.square = square
         self.widget = SquareOverviewWidget(title=square.title, *argv, **kwargs)
         self.setSizeHint(self.widget.minimumSizeHint())
 
-        self.setFlags(Qt.ItemFlags(Qt.ItemIsSelectable + Qt.ItemIsEnabled))
+        self.setFlags(QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsSelectable + QtCore.Qt.ItemIsEnabled))
 
         parent.addItem(self)
         parent.setItemWidget(self, self.widget)
@@ -32,7 +35,7 @@ class SquareOverviewListItem(QListWidgetItem):
         self.widget.update(title=self.square.title, description=self.square.description)
 
 
-class SquareOverviewWidget(QWidget, Ui_SquareOverview):
+class SquareOverviewWidget(QtGui.QWidget, Ui_SquareOverview):
     def __init__(self, title, description='', timestamp=None, avatar=None):
         super(SquareOverviewWidget, self).__init__()
         self.setupUi(self)
@@ -52,4 +55,4 @@ class SquareOverviewWidget(QWidget, Ui_SquareOverview):
             self.timestamp_lbl.setText(strftime('%H:%M:%S'))
 
         if avatar:
-            self.avatar_lbl.setPixmap(QPixmap(avatar))
+            self.avatar_lbl.setPixmap(QtGui.QPixmap(avatar))

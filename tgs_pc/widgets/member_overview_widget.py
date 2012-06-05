@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 #QT
-from PyQt4.QtGui import QWidget, QPixmap, QListWidgetItem
-from PyQt4.QtCore import QSize
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    from PyQt4 import QtGui, QtCore
+    QtCore.Signal = QtCore.pyqtSignal
 
 #Python builtin
 from time import strftime, localtime
@@ -14,9 +17,9 @@ from ..ui.memberoverview import Ui_MemberOverview
 __all__ = ['MemberOverviewWidget', 'MemberOverviewListItem']
 
 
-class MemberOverviewListItem(QListWidgetItem):
+class MemberOverviewListItem(QtGui.QListWidgetItem):
     def __init__(self, parent, message):
-        super(MemberOverviewListItem, self).__init__(type=QListWidgetItem.UserType)
+        super(MemberOverviewListItem, self).__init__(type=QtGui.QListWidgetItem.UserType)
 
         self.message = message
         nick = message.member.alias
@@ -46,7 +49,7 @@ class MemberOverviewListItem(QListWidgetItem):
                     break
 
 
-class MemberOverviewWidget(QWidget, Ui_MemberOverview):
+class MemberOverviewWidget(QtGui.QWidget, Ui_MemberOverview):
     def __init__(self, nick='', body='', timestamp=None, avatar=None, media=None):
         super(MemberOverviewWidget, self).__init__()
         self.setupUi(self)
@@ -67,7 +70,7 @@ class MemberOverviewWidget(QWidget, Ui_MemberOverview):
             self.timestamp_lbl.setText(strftime('%H:%M:%S'))
 
         if avatar:
-            self.avatar_lbl.setPixmap(QPixmap(avatar))
+            self.avatar_lbl.setPixmap(QtGui.QPixmap(avatar))
 
         if media:
             self.media_lbl.setText("This message has media, but the coder is lazy.")
