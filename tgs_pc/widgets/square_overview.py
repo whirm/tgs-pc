@@ -9,7 +9,7 @@ from PyQt4.QtCore import QSize, Qt
 from time import strftime, localtime
 
 #Local
-from ui.squareoverview import Ui_SquareOverview
+from ..ui.squareoverview import Ui_SquareOverview
 
 __all__ = ['SquareOverviewWidget', 'SquareOverviewListItem']
 

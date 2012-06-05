@@ -9,7 +9,7 @@ from PyQt4.QtCore import QSize
 from time import strftime, localtime
 
 #Local
-from ui.memberoverview import Ui_MemberOverview
+from ..ui.memberoverview import Ui_MemberOverview
 
 __all__ = ['MemberOverviewWidget', 'MemberOverviewListItem']
 

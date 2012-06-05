@@ -9,7 +9,7 @@ from PyQt4.QtCore import QSize
 from time import strftime, localtime
 
 #Local
-from ui.chatmessage import Ui_ChatMessage
+from ..ui.chatmessage import Ui_ChatMessage
 
 __all__ = ['ChatMessageWidget', 'ChatMessageListItem']
 

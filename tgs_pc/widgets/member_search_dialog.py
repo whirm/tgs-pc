@@ -1,13 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-try:
-    from ui.member_search import Ui_MemberSearchDialog
-except (ImportError):
-    print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
-    import sys
-    sys.exit()
+from ..ui.member_search import Ui_MemberSearchDialog
 
 from PyQt4 import QtGui, QtCore
 

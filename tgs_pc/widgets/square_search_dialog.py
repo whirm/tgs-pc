@@ -2,12 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-try:
-    from ui.square_search import Ui_SquareSearchDialog
-except (ImportError):
-    print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
-    import sys
-    sys.exit()
+from ..ui.square_search import Ui_SquareSearchDialog
 
 from PyQt4 import QtGui, QtCore
 

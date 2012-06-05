@@ -1,18 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-try:
-    from ui.message_search import Ui_MessageSearchDialog
-except (ImportError):
-    print "\n>>> MessageSearch: Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
-    import sys
-    sys.exit()
+from ..ui.message_search import Ui_MessageSearchDialog
 
 from PyQt4 import QtGui, QtCore
 
 #Local
-from widgets import ChatMessageWidget
+from . import ChatMessageWidget
 
 __all__=['MessageSearchDialog',]
 

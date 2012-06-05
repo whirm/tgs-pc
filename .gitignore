@@ -4,6 +4,5 @@
 *.bak
 \#*\#
 \.\#*
-/src/ui/*.py
-/src/ui/resources_rc.py
-/src/sqlite
+/tgs_pc/ui/*.py
+/tgs_pc/ui/resources_rc.py
