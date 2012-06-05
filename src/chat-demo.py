@@ -56,8 +56,9 @@ class TGS(QtCore.QObject):
     squareSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
     textSearchUpdate = QtCore.pyqtSignal(SearchCache, 'QString')
 
-    def __init__(self):
+    def __init__(self, workdir):
         super(TGS, self).__init__()
+        self._workdir = workdir
         self.callback = None
         self._discovery = None
         self._my_member = None
@@ -120,12 +121,10 @@ class TGS(QtCore.QObject):
     ##################################
     def _dispersy(self, callback):
         if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-            workdir = unicode(sys.argv[1])
-        else:
-            workdir = u"."
+            self._workdir = unicode(sys.argv[1])
 
         # start Dispersy
-        dispersy = Dispersy.get_instance(callback, workdir)
+        dispersy = Dispersy.get_instance(callback, self._workdir)
         dispersy.endpoint = StandaloneEndpoint(dispersy, 12345)
         dispersy.endpoint.start()
 
@@ -221,12 +220,6 @@ class ChatCore:
         self._communities_listwidgets = {}
         self._square_search_dialog = None
         self._message_attachment = None
-
-        self._tgs = TGS()
-
-        self._tgs.memberSearchUpdate.connect(self.onMemberSearchUpdate)
-        self._tgs.squareSearchUpdate.connect(self.onSquareSearchUpdate)
-        self._tgs.textSearchUpdate.connect(self.onTextSearchUpdate)
 
 
     #Slots:
@@ -465,7 +458,14 @@ class ChatCore:
     ##################################
     def run(self):
         #Read config file
-        self._config = self._getConfig()
+        self._getConfig()
+
+        #Setup TGS core
+        self._tgs = TGS(self._workdir)
+
+        self._tgs.memberSearchUpdate.connect(self.onMemberSearchUpdate)
+        self._tgs.squareSearchUpdate.connect(self.onSquareSearchUpdate)
+        self._tgs.textSearchUpdate.connect(self.onTextSearchUpdate)
 
         #Setup QT main window
         self.app = QtGui.QApplication(sys.argv)
@@ -547,7 +547,8 @@ class ChatCore:
                 }
             config.write()
 
-        return config
+        self._workdir = unicode(config_path)
+        self._config = config
 
     def _propagateMemberInfoToAll(self):
         #TODO: Check if the community has up to date info before sending unnecessary updates
