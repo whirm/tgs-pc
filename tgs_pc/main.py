@@ -13,6 +13,7 @@ import os
 from tgscore.discovery.community import DiscoveryCommunity, SearchCache
 from tgscore.square.community import PreviewCommunity, SquareCommunity
 from tgscore import events
+import eventproxy
 
 from tgscore.dispersy.endpoint import StandaloneEndpoint
 from tgscore.dispersy.callback import Callback
@@ -35,9 +36,9 @@ except ImportError:
 from widgets import (ChatMessageListItem, MainWin, SquareOverviewListItem,
         SquareEditDialog, SquareSearchDialog, MessageSearchDialog, MemberSearchDialog)
 
-#Set up QT as event broker
-events.setEventBrokerFactory(events.qt.createEventBroker)
-global_events = events.qt.createEventBroker(None)
+#Set up our QT event broker
+events.setEventBrokerFactory(eventproxy.createEventBroker)
+global_events = eventproxy.createEventBroker(None)
 
 #Die with ^C
 import signal
