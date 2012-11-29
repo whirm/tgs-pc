@@ -5,7 +5,7 @@
 from PyQt4.QtCore import pyqtSignal
 
 try:
-    from ui.squareeditdialog import Ui_SquareEditDialog
+    from ..ui.squareeditdialog import Ui_SquareEditDialog
 except (ImportError):
     print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
     raise
