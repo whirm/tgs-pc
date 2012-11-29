@@ -9,7 +9,7 @@ try:
     from ..ui.main import Ui_TheGlobalSquare
 except (ImportError):
     print "\n>>> Run build_resources.sh (you need pyqt4-dev-tools) <<<\n"
-    sys.exit()
+    raise
 
 from PyQt4 import QtGui, QtCore
 
