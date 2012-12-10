@@ -525,7 +525,7 @@ class ChatCore:
         elif current_os.startswith('linux'):
             config_path = os.path.join(os.environ['HOME'], '.config', 'TheGlobalSquare')
         elif current_os == 'darwin':
-            config_path = os.path.join('Users', os.environ['USER'], 'Library', 'Preferences', 'TheGlobalSquare')
+            config_path = os.path.join('/Users', os.environ['USER'], 'Library', 'Preferences', 'TheGlobalSquare')
         else:
             print "I don't know where to store my config in this operating system! (%s)\nExiting..." % current_os
             sys.exit(10)
