@@ -43,11 +43,6 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 CONFIG_FILE_NAME='tgs.conf'
 
-#TODO: Implement the hot communities list:X
-#214648     +eviy  whirm: ok.  when you are at that point, look in the discovery community.  thats what gossips the 'hot' messages around
-#214701    +whirm  ok, noted
-#214728     +eviy  whirm: a signal at the end of _collect_top_hots will tell you when the most recent hots have been chosen
-
 #TODO: Separate the TGS stuff (dispersy threads setup et al, internal callbacks...) from the pure UI code and put it in this class:
 class TGS(QtCore.QObject):
     ##################################
@@ -153,7 +148,6 @@ class TGS(QtCore.QObject):
             yield 0.1
             dispersy.get_community(master.mid)
 
-
     def _dispersy_onSearchResult(self, result):
         print "OnSearchResult", result
 
@@ -222,7 +216,7 @@ class ChatCore:
         self._square_search_dialog = None
         self._message_attachment = None
 
-
+    ##################################
     #Slots:
     ##################################
 
@@ -315,9 +309,9 @@ class ChatCore:
             print "I categorically refuse to send an empty message."
 
     def onNewCommunityCreated(self, square):
-        #TODO: We need to update the squares list here.
+        #TODO: We need to update the square list here.
         print "New square created", square
-        #TODO: We will switch to an MVC widget soon, so we can sort, filter, update, etc easily.
+        #TODO: We should switch to an MVC widget soon, so we can sort, filter, update, etc easily.
 
         list_item = SquareOverviewListItem(parent=self.mainwin.squares_list, square=square)
         item_index = self.mainwin.squares_list.row(list_item)
@@ -381,6 +375,9 @@ class ChatCore:
             msg_box = QtGui.QMessageBox()
             msg_box.setText("Please, select which square you want to leave from the top-left list first.")
             msg_box.exec_()
+
+    def onNewHotCommunitiesAvailable(self, squares, texts):
+        print "YAY", squares, texts
 
     def onCreateSquareBtnPushed(self):
         self.mainwin.createSquare_btn.setEnabled(False)
@@ -502,6 +499,7 @@ class ChatCore:
 
         #TODO: Refactor this to put it in TGS class
         #Connect global events
+        global_events.qt.newHotCommunitiesAvailable.connect(self.onNewHotCommunitiesAvailable)
         global_events.qt.newCommunityCreated.connect(self.onNewCommunityCreated)
         #global_events.qt.newPreviewCommunityCreated.connect(
         #                                        self.onNewPreviewCommunityCreated)

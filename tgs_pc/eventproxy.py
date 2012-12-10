@@ -46,7 +46,10 @@ class QtGlobalEventBroker:
         self.qt.newCommunityCreated.emit(square)
     def newPreviewCommunityCreated(self, square):
         self.qt.newPreviewCommunityCreated.emit(square)
+    def newHotCommunitiesAvailable(self, squares, texts):
+        self.qt.newHotCommunitiesAvailable.emit(squares, texts)
 
 class QtGlobalEventBrokerWrapped(QObject):
     newCommunityCreated = pyqtSignal(SquareCommunity)
     newPreviewCommunityCreated = pyqtSignal(PreviewCommunity)
+    newHotCommunitiesAvailable = pyqtSignal(list,list)
