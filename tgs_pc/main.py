@@ -541,7 +541,7 @@ class ChatCore:
         if not os.path.exists(config_file_path):
             #Set default values
             config['Member'] = {
-                'Alias': 'Anon',
+                'Alias': u'Anon',
                 'Thumbnail': ''
                 }
             config.write()
