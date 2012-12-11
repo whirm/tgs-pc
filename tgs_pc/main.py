@@ -377,7 +377,13 @@ class ChatCore:
             msg_box.exec_()
 
     def onNewHotCommunitiesAvailable(self, squares, texts):
-        print "YAY", squares, texts
+        print "New suggestions arrived", squares, texts
+
+        self.mainwin.suggested_squares_list.clear()
+        for square in squares:
+            list_item = SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, square=square)
+            item_index = self.suggested_mainwin.squares_list.row(list_item)
+            self._communities[square.cid] = square
 
     def onCreateSquareBtnPushed(self):
         self.mainwin.createSquare_btn.setEnabled(False)
