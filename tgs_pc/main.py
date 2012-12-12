@@ -116,8 +116,6 @@ class TGS(QtCore.QObject):
     #Private methods:
     ##################################
     def _dispersy(self, callback):
-        if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-            self._workdir = unicode(sys.argv[1])
 
         # start Dispersy
         dispersy = Dispersy.get_instance(callback, self._workdir)
@@ -526,14 +524,16 @@ class ChatCore:
     ##################################
     def _getConfig(self):
         current_os = sys.platform
-        if current_os in ('win32','cygwin'):
+        if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
+            config_path = unicode(sys.argv[1])
+        elif current_os in ('win32','cygwin'):
             config_path = os.path.join(os.environ['AppData'], 'TheGlobalSquare')
         elif current_os.startswith('linux'):
             config_path = os.path.join(os.environ['HOME'], '.config', 'TheGlobalSquare')
         elif current_os == 'darwin':
             config_path = os.path.join('/Users', os.environ['USER'], 'Library', 'Preferences', 'TheGlobalSquare')
         else:
-            print "I don't know where to store my config in this operating system! (%s)\nExiting..." % current_os
+            print "I don't know where to store my config in this operating system and didn't receive an existing dir as first argument. (%s)\nExiting." % current_os
             sys.exit(10)
 
         #Create app data dir if it doesn't exist
