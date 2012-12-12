@@ -235,7 +235,7 @@
               </property>
               <item>
                <property name="text">
-                <string>Overview</string>
+                <string>Unified history</string>
                </property>
                <property name="flags">
                 <set>ItemIsSelectable|ItemIsUserCheckable|ItemIsEnabled</set>
