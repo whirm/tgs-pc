@@ -353,10 +353,17 @@ class ChatCore:
         square.events.connect(square.events, QtCore.SIGNAL('squareInfoUpdated'), list_item.onInfoUpdated)
         square.events.connect(square.events, QtCore.SIGNAL('messageReceived'), self.onTextMessageReceived)
 
-    def onJoinPreviewCommunity(self, community):
+    def onJoinSuggestedCommunity(self):
         #TODO: disable the leave/join buttons if no square is selected
         print "Joining a new community!"
-        self._tgs.joinSquare(community)
+        item = self.mainwin.suggested_squares_list.currentItem()
+        if item:
+            square = item.square
+            self._tgs.joinSquare(square)
+        else:
+            msg_box = QtGui.QMessageBox()
+            msg_box.setText("Please, select which square you want to join from the suggested squares list first.")
+            msg_box.exec_()
 
     def onLeaveCommunity(self):
         print "leaving community!"
@@ -380,8 +387,7 @@ class ChatCore:
         self.mainwin.suggested_squares_list.clear()
         for square in squares:
             list_item = SquareOverviewListItem(parent=self.mainwin.suggested_squares_list, square=square)
-            item_index = self.suggested_mainwin.squares_list.row(list_item)
-            self._communities[square.cid] = square
+            list_item.square = square
 
     def onCreateSquareBtnPushed(self):
         self.mainwin.createSquare_btn.setEnabled(False)
@@ -490,7 +496,7 @@ class ChatCore:
         self.mainwin.message_send_btn.clicked.connect(
                                                 self.onMessageReadyToSend)
         self.mainwin.attach_btn.toggled.connect(self.onAttachButtonToggled)
-        self.mainwin.join_square_btn.clicked.connect(self.onJoinPreviewCommunity)
+        self.mainwin.join_square_btn.clicked.connect(self.onJoinSuggestedCommunity)
         self.mainwin.leave_square_btn.clicked.connect(self.onLeaveCommunity)
         self.mainwin.createSquare_btn.clicked.connect(self.onCreateSquareBtnPushed)
 
