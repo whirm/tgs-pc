@@ -362,7 +362,7 @@ class ChatCore:
             self._tgs.joinSquare(square)
         else:
             msg_box = QtGui.QMessageBox()
-            msg_box.setText("Please, select which square you want to join from the suggested squares list first.")
+            msg_box.setText("Please, select which square you want to join from the suggested squares list.")
             msg_box.exec_()
 
     def onLeaveCommunity(self):

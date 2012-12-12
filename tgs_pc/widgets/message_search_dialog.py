@@ -19,8 +19,8 @@ class MessageSearchDialog(QtGui.QDialog, Ui_MessageSearchDialog):
         super(MessageSearchDialog, self).__init__(*argv, **kwargs)
         self.setupUi(self)
 
-        self._resetModel()        
-		#Connect the joinSquare button to its callback
+        self._resetModel()
+        #Connect the joinSquare button to its callback
         self.joinSquare_btn.clicked.connect(self.onJoinSquareClicked)
         self.followMessageAuthor_btn.clicked.connect(self.onJoinSquareClicked)
 

@@ -112,20 +112,6 @@
                <property name="horizontalSpacing">
                 <number>8</number>
                </property>
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_2">
-                 <property name="text">
-                  <string>Location:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="2">
-                <widget class="QLabel" name="coords_label">
-                 <property name="text">
-                  <string>(42.123123 3.543123)</string>
-                 </property>
-                </widget>
-               </item>
                <item row="1" column="0">
                 <widget class="QLabel" name="label_3">
                  <property name="text">
@@ -133,17 +119,17 @@
                  </property>
                 </widget>
                </item>
-               <item row="0" column="1">
-                <widget class="QLabel" name="location_label">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_2">
                  <property name="text">
-                  <string>Elbonia</string>
+                  <string>Location:</string>
                  </property>
                 </widget>
                </item>
-               <item row="1" column="1">
-                <widget class="QLabel" name="radius_label">
+               <item row="2" column="1">
+                <widget class="QLabel" name="population_label">
                  <property name="text">
-                  <string>5Km</string>
+                  <string>50</string>
                  </property>
                 </widget>
                </item>
@@ -154,10 +140,17 @@
                  </property>
                 </widget>
                </item>
-               <item row="2" column="1">
-                <widget class="QLabel" name="population_label">
+               <item row="1" column="1">
+                <widget class="QLabel" name="radius_label">
                  <property name="text">
-                  <string>50</string>
+                  <string>5Km</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1" colspan="2">
+                <widget class="QLabel" name="location_label">
+                 <property name="text">
+                  <string>Elbonia</string>
                  </property>
                 </widget>
                </item>
