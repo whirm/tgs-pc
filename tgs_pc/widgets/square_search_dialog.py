@@ -56,8 +56,6 @@ class SquareSearchDialog(QtGui.QDialog, Ui_SquareSearchDialog):
         square = self._squares[index.row()]
         self.onJoinSquareRequested.emit(square)
 
-        msgBox = QtGui.QMessageBox()
-        msgBox.setText("You wish!")
         self.close()
         msgBox.exec_()
 
