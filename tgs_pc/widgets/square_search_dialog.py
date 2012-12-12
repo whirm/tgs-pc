@@ -13,8 +13,8 @@ from PyQt4 import QtGui, QtCore
 __all__=['SquareSearchDialog',]
 
 #Row name constants
-COLUMNS=4
-TITLE, DESCRIPTION, LOCATION, SQUARE = range(COLUMNS)
+COLUMNS = 5
+TITLE, DESCRIPTION, LOCATION, RADIUS, SQUARE = range(COLUMNS)
 
 #TODO: Refactor this into a generic search dialog class and then make the Search dialogs inherit from it
 
@@ -35,6 +35,9 @@ class SquareSearchDialog(QtGui.QDialog, Ui_SquareSearchDialog):
         self.search_btn.clicked.connect(self.onSearchReady)
 
     def _resetModel(self):
+        #This method exists because there seems to be a bug with pyqt with the model.clear() function,
+        #so we need to recreate the model every time until we figure out what's' wrong.
+
         #Set up the square list data model
         self._model = QtGui.QStandardItemModel(0, COLUMNS, self.results_list)
         self._model.setHeaderData(TITLE, QtCore.Qt.Horizontal, "Title")
@@ -42,6 +45,17 @@ class SquareSearchDialog(QtGui.QDialog, Ui_SquareSearchDialog):
         self._model.setHeaderData(LOCATION, QtCore.Qt.Horizontal, "Location")
         self._model.setHeaderData(SQUARE, QtCore.Qt.Horizontal, "Square")
         self.results_list.setModel(self._model)
+
+        #Map the community attributes to the corresponding widgets
+        self._mapper = QtGui.QDataWidgetMapper(self)
+        self._mapper.setModel(self._model)
+
+        self._mapper.addMapping(self.title_label, TITLE, "text")
+        self._mapper.addMapping(self.description_tbox, DESCRIPTION)
+        self._mapper.addMapping(self.location_label, LOCATION, "text")
+        self._mapper.addMapping(self.radius_label, RADIUS, "text")
+
+        self.results_list.selectionModel().currentChanged.connect(self._mapper.setCurrentModelIndex)
 
         #Clear the square list
         self._squares = []
@@ -69,7 +83,11 @@ class SquareSearchDialog(QtGui.QDialog, Ui_SquareSearchDialog):
         self._model.insertRow(0)
         self._model.setData(self._model.index(0, TITLE), square.title)
         self._model.setData(self._model.index(0, DESCRIPTION), square.description)
-        self._model.setData(self._model.index(0, LOCATION), square.location)
+        lat, lon = square.location
+        lat = (lat/10.0**8)
+        lon = (lon/10.0**8)
+        self._model.setData(self._model.index(0, LOCATION), "(lat: %s, lon: %s)" % (lat, lon))
+        self._model.setData(self._model.index(0, RADIUS), square.radius)
         self._model.setData(self._model.index(0, SQUARE), square)
         self._squares.insert(0, square)
 
