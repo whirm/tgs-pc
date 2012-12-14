@@ -31,25 +31,6 @@ Cheers.
 # Some info that may be interesting to you fellow developer...
 
 ## Extract from a chat with eviy:
-	191906     +eviy  the dispersy directory is from the mainbranch
-	191912     +eviy  the rest is new code
-	
-	191953     +eviy  it could ve usefull to understand how dispersy works, or at least how it can be used (that was the intended purpose)
-	
-	192026     +eviy  two small notes:
-	192114     +eviy  1. i disabled the crypto (dispersy/crypto.py) at the start of the file there is an 'if True/False' statement to do that
-	192149     +eviy  2. it uses a special tracker (sinse the normal trackers expect that crypro is working)
-	192234     +eviy  2. you can find the alternate tracker in the dispersy/bootstrap.py file in the chat-demo.tar
-	
-	192245    +whirm  why is crypto disabled? to make debugging easy or it requires some extra setup?
-	192336     +eviy  cryto requires a python package called 'M2Crypto'
-	
-	192356     +eviy  and i didn't have time to find that package (if it even exists) on android
-	192437    +whirm  eviy: ok, ah, ok, I think it's not ported (for what I remember reading at the python 4 android site)
-	192444     +eviy  so disabling crypto replaces all crypto calles with dummy functions that give back a similar response
-	192504     +eviy  donno :(
-	192520     +eviy  M2Crypto is not even part of python, its a 3rd party package
-	
 	192707     +eviy  the community/community.py file (in the chat-demo) is kinda the main code for handling the messages that dispersy disseminates
 	192811     +eviy  this file has a method called _initialize_meta_messages where all supported messages are defined
 	192825     +eviy  in the demo only one message exists 'text'
