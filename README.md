@@ -9,6 +9,11 @@ TGS requires the following python modules:
 (also requires [Qt 4.x libraries](http://qt-project.org/downloads))
 - [sip](http://www.riverbankcomputing.com/software/sip/download)
 
+## Ubuntu/Debian Notes
+To be able to run TheGlobalSquare on Debian and derivatives you just need to install those dependencies:
+
+  sudo apt-get install python-m2crypto python-qt4 pyqt4-dev-tools  python-netifaces python-configobj
+
 ## OS X Notes
 1. The version of python that comes with OS X will probably not work. Download and install
 an official python build such as 2.7.3 per [this page](http://www.python.org/getit/mac/).
@@ -23,10 +28,16 @@ Download and install [homebrew](http://mxcl.github.com/homebrew/), then
 then execute the normal tgs script.
 
 ## Building The UI
-Before starting the app, you will need to execute tgs_pc/build_resources.sh once
+Before starting the app, you will need to execute build_resources.sh from inside the tgs_pc directory once
 and every time any file in the ui/ dir gets updated by you or by a git pull.
 
 Cheers.
+
+
+# Want to help?
+
+Join us at the #tgs IRC channel on chat.freenode.net.
+
 
 # Some info that may be interesting to you fellow developer...
 
