@@ -23,8 +23,8 @@ if you don't have git.
 Create a tgs folder on your computer. Replace /path/to/tgs with wherever your tgs folder is, then:
 
 	cd /path/to/tgs
-	git clone --recursive git@github.com:whirm/tgs-core.git
-	git clone git@github.com:whirm/tgs-pc.git
+	git clone --recursive https://github.com/whirm/tgs-core.git
+	git clone https://github.com/whirm/tgs-pc.git
 
 Python will need to know where tgs-core is:
 
