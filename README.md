@@ -12,30 +12,30 @@ TGS requires the following python modules:
 ## Ubuntu/Debian Notes
 To be able to run TheGlobalSquare on Debian and derivatives you just need to install those dependencies:
 
-  sudo apt-get install python-m2crypto python-qt4 pyqt4-dev-tools  python-netifaces python-configobj
+	sudo apt-get install python-m2crypto python-qt4 pyqt4-dev-tools  python-netifaces python-configobj
 
 Also
 
-  sudo apt-get install git
+	sudo apt-get install git
 
 if you don't have git.
 
 Create a tgs folder on your computer. Within it:
 
-  git clone --recursive git@github.com:whirm/tgs-core.git
-  git clone git@github.com:whirm/tgs-pc.git
+	git clone --recursive git@github.com:whirm/tgs-core.git
+	git clone git@github.com:whirm/tgs-pc.git
 
 Python will need to know where tgs-core is. Replace /path/to/tgs with wherever your tgs folder is:
 
-  export PYTHONPATH=$PYTHONPATH:/path/to/tgs/tgs-core
+	export PYTHONPATH=$PYTHONPATH:/path/to/tgs/tgs-core
 
 Next, build the UI. You'll need pyrcc4 and pyuic4 which come with PyQt (pyqt4-dev-tools). From within:
 
-  ./build_resources.sh
+	./build_resources.sh
 
 This script needs to run whenever the UI is updated (ie when you git pull into tgs-pc).
 
-  cd /path/to/tgs/tgs-pc; ./tgs
+	cd /path/to/tgs/tgs-pc; ./tgs
 
 to start the app.
 
